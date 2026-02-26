@@ -52,6 +52,17 @@ export default class OfficeScene extends Phaser.Scene {
       this.moveRemotePlayer(data.id, data.x, data.y);
     });
 
+    // Server rejected our move (tile occupied by another player)
+    socketManager.on('player:move:reject', (data) => {
+      const localSprite = this.players.get(this.localId);
+      if (!localSprite) return;
+      localSprite.setData('gridX', data.x);
+      localSprite.setData('gridY', data.y);
+      localSprite.x = data.x * TILE + TILE / 2;
+      localSprite.y = data.y * TILE + TILE / 2;
+      localSprite.setDepth(data.y + 0.5);
+    });
+
     socketManager.on('player:left', (data) => {
       this.cameraPeers.delete(data.id);
       this.micPeers.delete(data.id);
@@ -88,17 +99,19 @@ export default class OfficeScene extends Phaser.Scene {
     socketManager.on('game:sync', ({ players: syncPlayers }) => {
       console.log(`[OfficeScene] game:sync received, ${syncPlayers.length} players`);
       syncPlayers.forEach((p) => {
+        if (p.id === this.localId) return;
         if (!this.players.has(p.id)) {
           console.log(`[OfficeScene] Sync adding missing player: ${p.name} (${p.id})`);
           this.addPlayer(p);
-          if (p.cameraOn) this.cameraPeers.add(p.id);
-          if (p.micOn) this.micPeers.add(p.id);
         }
+        if (p.cameraOn) this.cameraPeers.add(p.id);
+        if (p.micOn) this.micPeers.add(p.id);
       });
     });
-    if (socketManager.socket) {
-      socketManager.socket.emit('game:sync');
-    }
+    // Sync immediately and again after a short delay to catch late arrivals
+    this._requestSync();
+    this.time.delayedCall(1000, () => this._requestSync());
+    this.time.delayedCall(3000, () => this._requestSync());
 
     // Chat setup
     this.setupChat();
@@ -254,6 +267,12 @@ export default class OfficeScene extends Phaser.Scene {
     remoteBox.classList.add('cam-hidden');
     remoteVideo.srcObject = null;
     this.currentNearbyId = null;
+  }
+
+  _requestSync() {
+    if (socketManager.socket) {
+      socketManager.socket.emit('game:sync');
+    }
   }
 
   // --- Player management ---

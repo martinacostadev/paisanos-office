@@ -106,6 +106,16 @@ io.on('connection', (socket) => {
     // Basic bounds check
     if (newX < 0 || newX >= MAP_COLS || newY < 0 || newY >= MAP_ROWS) return;
 
+    // Check if another player already occupies the target tile
+    for (const [id, p] of players) {
+      if (id === socket.id) continue;
+      if (p.x === newX && p.y === newY) {
+        // Reject: send correction back to the client
+        socket.emit('player:move:reject', { x: player.x, y: player.y });
+        return;
+      }
+    }
+
     player.x = newX;
     player.y = newY;
 
