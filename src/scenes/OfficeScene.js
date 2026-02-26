@@ -283,22 +283,25 @@ export default class OfficeScene extends Phaser.Scene {
     const speechBg = sprite.getData('speechBubbleBg');
     if (speechText && speechBg) {
       speechText.x = sprite.x;
-      speechText.y = sprite.y - TILE / 2 - 10;
+      speechText.y = sprite.y - TILE / 2 - 12;
       const padding = 2;
-      const bounds = speechText.getBounds();
+      const tw = speechText.width * 0.16;
+      const th = speechText.height * 0.16;
+      const bx = sprite.x - tw / 2;
+      const by = sprite.y - TILE / 2 - 12 - th;
       speechBg.clear();
-      speechBg.fillStyle(0xffffff, 0.9);
+      speechBg.fillStyle(0xffffff, 0.92);
       speechBg.fillRoundedRect(
-        bounds.x - padding,
-        bounds.y - padding,
-        bounds.width + padding * 2,
-        bounds.height + padding * 2,
+        bx - padding,
+        by - padding,
+        tw + padding * 2,
+        th + padding * 2,
         2
       );
       speechBg.fillTriangle(
-        sprite.x - 2, bounds.y + bounds.height + padding,
-        sprite.x + 2, bounds.y + bounds.height + padding,
-        sprite.x, bounds.y + bounds.height + padding + 3
+        sprite.x - 2, by + th + padding,
+        sprite.x + 2, by + th + padding,
+        sprite.x, by + th + padding + 3
       );
     }
   }
@@ -336,22 +339,23 @@ export default class OfficeScene extends Phaser.Scene {
     sprite.setData('gridY', data.y);
     sprite.setDepth(data.y + 0.5);
 
-    // Name label above sprite (high resolution so it's not pixelated)
+    // Name label above sprite — large font scaled down for crisp rendering
     const nameLabel = this.add.text(
       data.x * TILE + TILE / 2,
       data.y * TILE - 2,
       data.name || '',
       {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '4px',
+        fontFamily: 'Arial, Helvetica, sans-serif',
+        fontSize: '24px',
+        fontStyle: 'bold',
         color: '#ffffff',
         align: 'center',
-        resolution: 4,
         stroke: '#000000',
-        strokeThickness: 0.5,
+        strokeThickness: 4,
       }
     );
     nameLabel.setOrigin(0.5, 1);
+    nameLabel.setScale(0.18);
     nameLabel.setDepth(9998);
     sprite.setData('nameLabel', nameLabel);
 
@@ -837,6 +841,19 @@ export default class OfficeScene extends Phaser.Scene {
 
     // Prevent arrow keys in chat from moving the player
     this.chatInput.addEventListener('keyup', (e) => e.stopPropagation());
+
+    // Global Enter key: focus chat input (first press opens chat & focuses, second press sends)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && document.activeElement !== this.chatInput) {
+        e.preventDefault();
+        // Open chat panel if collapsed
+        if (chatPanel.classList.contains('chat-collapsed')) {
+          chatPanel.classList.remove('chat-collapsed');
+          chatToggle.textContent = '\u25BC';
+        }
+        this.chatInput.focus();
+      }
+    });
   }
 
   addChatToPanel(data) {
@@ -886,43 +903,48 @@ export default class OfficeScene extends Phaser.Scene {
     }
 
     // Truncate long messages
-    const displayMsg = message.length > 30 ? message.slice(0, 30) + '...' : message;
+    const displayMsg = message.length > 40 ? message.slice(0, 40) + '...' : message;
 
-    // Create text
+    // Create text — large font scaled down for crisp rendering
     const textObj = this.add.text(
       sprite.x,
-      sprite.y - TILE / 2 - 10,
+      sprite.y - TILE / 2 - 12,
       displayMsg,
       {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '3.5px',
+        fontFamily: 'Arial, Helvetica, sans-serif',
+        fontSize: '20px',
         color: '#1a1a2e',
         align: 'center',
-        resolution: 4,
-        wordWrap: { width: 50 },
+        wordWrap: { width: 300 },
+        lineSpacing: 2,
       }
     );
     textObj.setOrigin(0.5, 1);
-    textObj.setDepth(9999);
+    textObj.setScale(0.16);
+    textObj.setDepth(10000);
 
     // Create background
     const padding = 2;
     const bg = this.add.graphics();
-    bg.setDepth(9998);
-    const bounds = textObj.getBounds();
-    bg.fillStyle(0xffffff, 0.9);
+    bg.setDepth(9999);
+    // Get bounds after scaling
+    const tw = textObj.width * 0.16;
+    const th = textObj.height * 0.16;
+    const bx = sprite.x - tw / 2;
+    const by = sprite.y - TILE / 2 - 12 - th;
+    bg.fillStyle(0xffffff, 0.92);
     bg.fillRoundedRect(
-      bounds.x - padding,
-      bounds.y - padding,
-      bounds.width + padding * 2,
-      bounds.height + padding * 2,
+      bx - padding,
+      by - padding,
+      tw + padding * 2,
+      th + padding * 2,
       2
     );
     // Small triangle pointer
     bg.fillTriangle(
-      sprite.x - 2, bounds.y + bounds.height + padding,
-      sprite.x + 2, bounds.y + bounds.height + padding,
-      sprite.x, bounds.y + bounds.height + padding + 3
+      sprite.x - 2, by + th + padding,
+      sprite.x + 2, by + th + padding,
+      sprite.x, by + th + padding + 3
     );
 
     sprite.setData('speechBubble', textObj);
