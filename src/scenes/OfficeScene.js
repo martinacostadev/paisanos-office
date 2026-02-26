@@ -297,17 +297,20 @@ export default class OfficeScene extends Phaser.Scene {
   }
 
   _updateSpriteLabels(sprite) {
+    // Position name right above the sprite's head
     const nameEl = sprite.getData('nameEl');
-    if (nameEl) {
-      const pos = this._worldToScreen(sprite.x, sprite.y - TILE / 2 - 1);
-      nameEl.style.left = pos.x + 'px';
-      nameEl.style.top = pos.y + 'px';
-    }
     const speechEl = sprite.getData('speechEl');
+    const topOfSprite = this._worldToScreen(sprite.x, sprite.y - TILE / 2);
+
+    if (nameEl) {
+      nameEl.style.left = topOfSprite.x + 'px';
+      nameEl.style.top = (topOfSprite.y - 2) + 'px';
+    }
+    // Speech bubble sits above the name
     if (speechEl) {
-      const pos = this._worldToScreen(sprite.x, sprite.y - TILE / 2 - 3);
-      speechEl.style.left = pos.x + 'px';
-      speechEl.style.top = pos.y + 'px';
+      const nameHeight = nameEl ? nameEl.offsetHeight : 0;
+      speechEl.style.left = topOfSprite.x + 'px';
+      speechEl.style.top = (topOfSprite.y - 2 - nameHeight - 2) + 'px';
     }
   }
 
@@ -826,6 +829,10 @@ export default class OfficeScene extends Phaser.Scene {
       this.showSpeechBubble(this.localId, text);
       socketManager.sendChat(text);
       this.chatInput.value = '';
+      // Close chat and return focus to game so arrows work
+      this.chatInput.blur();
+      chatPanel.classList.add('chat-collapsed');
+      chatToggle.textContent = '\u25B2';
     };
 
     this.chatSendBtn.addEventListener('click', sendMessage);
@@ -850,14 +857,6 @@ export default class OfficeScene extends Phaser.Scene {
           chatToggle.textContent = '\u25BC';
         }
         this.chatInput.focus();
-      }
-      // Escape closes chat panel and unfocuses input
-      if (e.key === 'Escape') {
-        if (!chatPanel.classList.contains('chat-collapsed')) {
-          chatPanel.classList.add('chat-collapsed');
-          chatToggle.textContent = '\u25B2';
-        }
-        this.chatInput.blur();
       }
     });
   }
