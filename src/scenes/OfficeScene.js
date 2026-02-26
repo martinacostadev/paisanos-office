@@ -81,7 +81,8 @@ export default class OfficeScene extends Phaser.Scene {
 
     // Chat message listener
     socketManager.on('chat:message', (data) => {
-      this.showChatBubble(data);
+      this.addChatToPanel(data);
+      this.showSpeechBubble(data.id, data.message);
     });
 
     // Bug fix: request full sync after listeners are set up
@@ -271,6 +272,37 @@ export default class OfficeScene extends Phaser.Scene {
     }
   }
 
+  _updateSpriteLabels(sprite) {
+    const nameLabel = sprite.getData('nameLabel');
+    if (nameLabel) {
+      nameLabel.x = sprite.x;
+      nameLabel.y = sprite.y - TILE / 2 - 2;
+    }
+    // Reposition speech bubble if active
+    const speechText = sprite.getData('speechBubble');
+    const speechBg = sprite.getData('speechBubbleBg');
+    if (speechText && speechBg) {
+      speechText.x = sprite.x;
+      speechText.y = sprite.y - TILE / 2 - 10;
+      const padding = 2;
+      const bounds = speechText.getBounds();
+      speechBg.clear();
+      speechBg.fillStyle(0xffffff, 0.9);
+      speechBg.fillRoundedRect(
+        bounds.x - padding,
+        bounds.y - padding,
+        bounds.width + padding * 2,
+        bounds.height + padding * 2,
+        2
+      );
+      speechBg.fillTriangle(
+        sprite.x - 2, bounds.y + bounds.height + padding,
+        sprite.x + 2, bounds.y + bounds.height + padding,
+        sprite.x, bounds.y + bounds.height + padding + 3
+      );
+    }
+  }
+
   // --- Player management ---
 
   addPlayer(data) {
@@ -339,6 +371,7 @@ export default class OfficeScene extends Phaser.Scene {
     if (highlight) highlight.destroy();
     const nameLabel = sprite.getData('nameLabel');
     if (nameLabel) nameLabel.destroy();
+    this._removeSpeechBubble(id);
 
     if (this.selectedWorker === sprite) {
       this.deselectWorker();
@@ -359,11 +392,7 @@ export default class OfficeScene extends Phaser.Scene {
     sprite.y = y * TILE + TILE / 2;
     sprite.setDepth(y + 0.5);
 
-    const nameLabel = sprite.getData('nameLabel');
-    if (nameLabel) {
-      nameLabel.x = sprite.x;
-      nameLabel.y = sprite.y - TILE / 2 - 2;
-    }
+    this._updateSpriteLabels(sprite);
 
     const frame = sprite.getData('animFrame');
     const nextFrame = frame === 0 ? 2 : frame === 2 ? 1 : frame === 1 ? 3 : 0;
@@ -744,11 +773,7 @@ export default class OfficeScene extends Phaser.Scene {
     localSprite.y = newY * TILE + TILE / 2;
     localSprite.setDepth(newY + 0.5);
 
-    const nameLabel = localSprite.getData('nameLabel');
-    if (nameLabel) {
-      nameLabel.x = localSprite.x;
-      nameLabel.y = localSprite.y - TILE / 2 - 2;
-    }
+    this._updateSpriteLabels(localSprite);
 
     const frame = localSprite.getData('animFrame');
     const nextFrame = frame === 0 ? 2 : frame === 2 ? 1 : frame === 1 ? 3 : 0;
@@ -773,26 +798,30 @@ export default class OfficeScene extends Phaser.Scene {
     const chatPanel = document.getElementById('chat-panel');
     const chatToggle = document.getElementById('chat-toggle-btn');
 
-    // Show chat panel now that we're in the game
+    // Show chat panel (collapsed by default)
     chatPanel.classList.remove('chat-hidden');
+    chatPanel.classList.add('chat-collapsed');
+    chatToggle.textContent = '\u25B2'; // chevron up (click to open)
 
     // Collapse / expand toggle
     const header = document.getElementById('chat-header');
     header.addEventListener('click', () => {
       chatPanel.classList.toggle('chat-collapsed');
-      chatToggle.textContent = chatPanel.classList.contains('chat-collapsed') ? '+' : '—';
+      chatToggle.textContent = chatPanel.classList.contains('chat-collapsed') ? '\u25B2' : '\u25BC';
     });
 
     const sendMessage = () => {
       const text = this.chatInput.value.trim();
       if (!text) return;
-      // Show own message immediately
-      this.showChatBubble({
+      // Show in chat panel
+      this.addChatToPanel({
         id: this.localId,
         name: 'You',
         message: text,
         timestamp: Date.now(),
       });
+      // Show speech bubble above local player
+      this.showSpeechBubble(this.localId, text);
       socketManager.sendChat(text);
       this.chatInput.value = '';
     };
@@ -810,7 +839,7 @@ export default class OfficeScene extends Phaser.Scene {
     this.chatInput.addEventListener('keyup', (e) => e.stopPropagation());
   }
 
-  showChatBubble(data) {
+  addChatToPanel(data) {
     const bubble = document.createElement('div');
     const isSelf = data.id === this.localId;
     bubble.className = 'chat-bubble' + (isSelf ? ' chat-bubble-self' : '');
@@ -841,6 +870,80 @@ export default class OfficeScene extends Phaser.Scene {
 
     // Scroll to bottom
     this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+  }
+
+  showSpeechBubble(playerId, message) {
+    const sprite = this.players.get(playerId);
+    if (!sprite) return;
+
+    // Remove existing speech bubble for this player
+    const existing = sprite.getData('speechBubble');
+    if (existing) existing.destroy();
+    const existingBg = sprite.getData('speechBubbleBg');
+    if (existingBg) existingBg.destroy();
+    if (sprite.getData('speechTimer')) {
+      sprite.getData('speechTimer').remove();
+    }
+
+    // Truncate long messages
+    const displayMsg = message.length > 30 ? message.slice(0, 30) + '...' : message;
+
+    // Create text
+    const textObj = this.add.text(
+      sprite.x,
+      sprite.y - TILE / 2 - 10,
+      displayMsg,
+      {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '3.5px',
+        color: '#1a1a2e',
+        align: 'center',
+        resolution: 4,
+        wordWrap: { width: 50 },
+      }
+    );
+    textObj.setOrigin(0.5, 1);
+    textObj.setDepth(9999);
+
+    // Create background
+    const padding = 2;
+    const bg = this.add.graphics();
+    bg.setDepth(9998);
+    const bounds = textObj.getBounds();
+    bg.fillStyle(0xffffff, 0.9);
+    bg.fillRoundedRect(
+      bounds.x - padding,
+      bounds.y - padding,
+      bounds.width + padding * 2,
+      bounds.height + padding * 2,
+      2
+    );
+    // Small triangle pointer
+    bg.fillTriangle(
+      sprite.x - 2, bounds.y + bounds.height + padding,
+      sprite.x + 2, bounds.y + bounds.height + padding,
+      sprite.x, bounds.y + bounds.height + padding + 3
+    );
+
+    sprite.setData('speechBubble', textObj);
+    sprite.setData('speechBubbleBg', bg);
+
+    // Auto-remove after 3 seconds
+    const timer = this.time.delayedCall(3000, () => {
+      this._removeSpeechBubble(playerId);
+    });
+    sprite.setData('speechTimer', timer);
+  }
+
+  _removeSpeechBubble(playerId) {
+    const sprite = this.players.get(playerId);
+    if (!sprite) return;
+    const textObj = sprite.getData('speechBubble');
+    if (textObj) { textObj.destroy(); sprite.setData('speechBubble', null); }
+    const bg = sprite.getData('speechBubbleBg');
+    if (bg) { bg.destroy(); sprite.setData('speechBubbleBg', null); }
+    const timer = sprite.getData('speechTimer');
+    if (timer) { timer.remove(); sprite.setData('speechTimer', null); }
   }
 
   animateWorkers() {
