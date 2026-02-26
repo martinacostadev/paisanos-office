@@ -272,37 +272,42 @@ export default class OfficeScene extends Phaser.Scene {
     }
   }
 
-  _updateSpriteLabels(sprite) {
-    const nameLabel = sprite.getData('nameLabel');
-    if (nameLabel) {
-      nameLabel.x = sprite.x;
-      nameLabel.y = sprite.y - TILE / 2 - 2;
+  _getOverlayContainer() {
+    if (!this._overlayContainer) {
+      const gameCanvas = document.querySelector('#game-container canvas');
+      let container = document.getElementById('game-overlay');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'game-overlay';
+        container.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:hidden;';
+        gameCanvas.parentElement.style.position = 'relative';
+        gameCanvas.parentElement.appendChild(container);
+      }
+      this._overlayContainer = container;
     }
-    // Reposition speech bubble if active
-    const speechText = sprite.getData('speechBubble');
-    const speechBg = sprite.getData('speechBubbleBg');
-    if (speechText && speechBg) {
-      speechText.x = sprite.x;
-      speechText.y = sprite.y - TILE / 2 - 12;
-      const padding = 2;
-      const tw = speechText.width * 0.16;
-      const th = speechText.height * 0.16;
-      const bx = sprite.x - tw / 2;
-      const by = sprite.y - TILE / 2 - 12 - th;
-      speechBg.clear();
-      speechBg.fillStyle(0xffffff, 0.92);
-      speechBg.fillRoundedRect(
-        bx - padding,
-        by - padding,
-        tw + padding * 2,
-        th + padding * 2,
-        2
-      );
-      speechBg.fillTriangle(
-        sprite.x - 2, by + th + padding,
-        sprite.x + 2, by + th + padding,
-        sprite.x, by + th + padding + 3
-      );
+    return this._overlayContainer;
+  }
+
+  _worldToScreen(worldX, worldY) {
+    const cam = this.cameras.main;
+    const zoom = cam.zoom;
+    const sx = (worldX - cam.scrollX) * zoom;
+    const sy = (worldY - cam.scrollY) * zoom;
+    return { x: sx, y: sy };
+  }
+
+  _updateSpriteLabels(sprite) {
+    const nameEl = sprite.getData('nameEl');
+    if (nameEl) {
+      const pos = this._worldToScreen(sprite.x, sprite.y - TILE / 2 - 1);
+      nameEl.style.left = pos.x + 'px';
+      nameEl.style.top = pos.y + 'px';
+    }
+    const speechEl = sprite.getData('speechEl');
+    if (speechEl) {
+      const pos = this._worldToScreen(sprite.x, sprite.y - TILE / 2 - 3);
+      speechEl.style.left = pos.x + 'px';
+      speechEl.style.top = pos.y + 'px';
     }
   }
 
@@ -339,25 +344,13 @@ export default class OfficeScene extends Phaser.Scene {
     sprite.setData('gridY', data.y);
     sprite.setDepth(data.y + 0.5);
 
-    // Name label above sprite — large font scaled down for crisp rendering
-    const nameLabel = this.add.text(
-      data.x * TILE + TILE / 2,
-      data.y * TILE - 2,
-      data.name || '',
-      {
-        fontFamily: 'Arial, Helvetica, sans-serif',
-        fontSize: '24px',
-        fontStyle: 'bold',
-        color: '#ffffff',
-        align: 'center',
-        stroke: '#000000',
-        strokeThickness: 4,
-      }
-    );
-    nameLabel.setOrigin(0.5, 1);
-    nameLabel.setScale(0.18);
-    nameLabel.setDepth(9998);
-    sprite.setData('nameLabel', nameLabel);
+    // Name label — DOM element for crisp text (bypasses Phaser pixel rendering)
+    const container = this._getOverlayContainer();
+    const nameEl = document.createElement('div');
+    nameEl.textContent = data.name || '';
+    nameEl.style.cssText = 'position:absolute;transform:translate(-50%,-100%);font:bold 11px Arial,sans-serif;color:#fff;text-shadow:0 0 3px #000,0 0 3px #000;white-space:nowrap;pointer-events:none;';
+    container.appendChild(nameEl);
+    sprite.setData('nameEl', nameEl);
 
     const highlight = this.add.graphics();
     highlight.setVisible(false);
@@ -373,8 +366,8 @@ export default class OfficeScene extends Phaser.Scene {
 
     const highlight = sprite.getData('highlight');
     if (highlight) highlight.destroy();
-    const nameLabel = sprite.getData('nameLabel');
-    if (nameLabel) nameLabel.destroy();
+    const nameEl = sprite.getData('nameEl');
+    if (nameEl) nameEl.remove();
     this._removeSpeechBubble(id);
 
     if (this.selectedWorker === sprite) {
@@ -748,6 +741,11 @@ export default class OfficeScene extends Phaser.Scene {
   // --- Game loop ---
 
   update(time) {
+    // Always update DOM overlay positions (camera may have moved)
+    for (const [, sprite] of this.players) {
+      this._updateSpriteLabels(sprite);
+    }
+
     const localSprite = this.players.get(this.localId);
     if (!localSprite) return;
 
@@ -853,6 +851,14 @@ export default class OfficeScene extends Phaser.Scene {
         }
         this.chatInput.focus();
       }
+      // Escape closes chat panel and unfocuses input
+      if (e.key === 'Escape') {
+        if (!chatPanel.classList.contains('chat-collapsed')) {
+          chatPanel.classList.add('chat-collapsed');
+          chatToggle.textContent = '\u25B2';
+        }
+        this.chatInput.blur();
+      }
     });
   }
 
@@ -894,76 +900,33 @@ export default class OfficeScene extends Phaser.Scene {
     if (!sprite) return;
 
     // Remove existing speech bubble for this player
-    const existing = sprite.getData('speechBubble');
-    if (existing) existing.destroy();
-    const existingBg = sprite.getData('speechBubbleBg');
-    if (existingBg) existingBg.destroy();
-    if (sprite.getData('speechTimer')) {
-      sprite.getData('speechTimer').remove();
-    }
+    this._removeSpeechBubble(playerId);
 
-    // Truncate long messages
-    const displayMsg = message.length > 40 ? message.slice(0, 40) + '...' : message;
+    const displayMsg = message.length > 50 ? message.slice(0, 50) + '...' : message;
 
-    // Create text — large font scaled down for crisp rendering
-    const textObj = this.add.text(
-      sprite.x,
-      sprite.y - TILE / 2 - 12,
-      displayMsg,
-      {
-        fontFamily: 'Arial, Helvetica, sans-serif',
-        fontSize: '20px',
-        color: '#1a1a2e',
-        align: 'center',
-        wordWrap: { width: 300 },
-        lineSpacing: 2,
-      }
-    );
-    textObj.setOrigin(0.5, 1);
-    textObj.setScale(0.16);
-    textObj.setDepth(10000);
-
-    // Create background
-    const padding = 2;
-    const bg = this.add.graphics();
-    bg.setDepth(9999);
-    // Get bounds after scaling
-    const tw = textObj.width * 0.16;
-    const th = textObj.height * 0.16;
-    const bx = sprite.x - tw / 2;
-    const by = sprite.y - TILE / 2 - 12 - th;
-    bg.fillStyle(0xffffff, 0.92);
-    bg.fillRoundedRect(
-      bx - padding,
-      by - padding,
-      tw + padding * 2,
-      th + padding * 2,
-      2
-    );
-    // Small triangle pointer
-    bg.fillTriangle(
-      sprite.x - 2, by + th + padding,
-      sprite.x + 2, by + th + padding,
-      sprite.x, by + th + padding + 3
-    );
-
-    sprite.setData('speechBubble', textObj);
-    sprite.setData('speechBubbleBg', bg);
+    // DOM speech bubble
+    const container = this._getOverlayContainer();
+    const el = document.createElement('div');
+    el.textContent = displayMsg;
+    el.style.cssText = 'position:absolute;transform:translate(-50%,-100%);background:rgba(255,255,255,0.95);color:#111;font:12px Arial,sans-serif;padding:4px 8px;border-radius:6px;max-width:160px;word-wrap:break-word;text-align:center;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,0.3);';
+    container.appendChild(el);
+    sprite.setData('speechEl', el);
 
     // Auto-remove after 3 seconds
     const timer = this.time.delayedCall(3000, () => {
       this._removeSpeechBubble(playerId);
     });
     sprite.setData('speechTimer', timer);
+
+    // Position it
+    this._updateSpriteLabels(sprite);
   }
 
   _removeSpeechBubble(playerId) {
     const sprite = this.players.get(playerId);
     if (!sprite) return;
-    const textObj = sprite.getData('speechBubble');
-    if (textObj) { textObj.destroy(); sprite.setData('speechBubble', null); }
-    const bg = sprite.getData('speechBubbleBg');
-    if (bg) { bg.destroy(); sprite.setData('speechBubbleBg', null); }
+    const el = sprite.getData('speechEl');
+    if (el) { el.remove(); sprite.setData('speechEl', null); }
     const timer = sprite.getData('speechTimer');
     if (timer) { timer.remove(); sprite.setData('speechTimer', null); }
   }
