@@ -10,7 +10,7 @@ const MAP_ROWS = 16;
 const WALKABLE = 0;
 const SOLID = 1;
 
-const PROXIMITY_TILES = 2; // How close (in tiles) to trigger video/audio
+const PROXIMITY_TILES = 1; // How close (in tiles) to trigger video/audio
 
 export default class OfficeScene extends Phaser.Scene {
   constructor() {
@@ -304,6 +304,17 @@ export default class OfficeScene extends Phaser.Scene {
     sprite.setData('gridY', data.y);
     sprite.setDepth(data.y + 0.5);
 
+    // Name label above sprite
+    const nameLabel = this.add.text(
+      data.x * TILE + TILE / 2,
+      data.y * TILE - 2,
+      data.name || '',
+      { fontFamily: 'Arial', fontSize: '5px', color: '#ffffff', align: 'center' }
+    );
+    nameLabel.setOrigin(0.5, 1);
+    nameLabel.setDepth(9998);
+    sprite.setData('nameLabel', nameLabel);
+
     const highlight = this.add.graphics();
     highlight.setVisible(false);
     highlight.setDepth(9999);
@@ -318,6 +329,8 @@ export default class OfficeScene extends Phaser.Scene {
 
     const highlight = sprite.getData('highlight');
     if (highlight) highlight.destroy();
+    const nameLabel = sprite.getData('nameLabel');
+    if (nameLabel) nameLabel.destroy();
 
     if (this.selectedWorker === sprite) {
       this.deselectWorker();
@@ -337,6 +350,12 @@ export default class OfficeScene extends Phaser.Scene {
     sprite.x = x * TILE + TILE / 2;
     sprite.y = y * TILE + TILE / 2;
     sprite.setDepth(y + 0.5);
+
+    const nameLabel = sprite.getData('nameLabel');
+    if (nameLabel) {
+      nameLabel.x = sprite.x;
+      nameLabel.y = sprite.y - TILE / 2 - 2;
+    }
 
     const frame = sprite.getData('animFrame');
     const nextFrame = frame === 0 ? 2 : frame === 2 ? 1 : frame === 1 ? 3 : 0;
@@ -707,6 +726,12 @@ export default class OfficeScene extends Phaser.Scene {
     localSprite.x = newX * TILE + TILE / 2;
     localSprite.y = newY * TILE + TILE / 2;
     localSprite.setDepth(newY + 0.5);
+
+    const nameLabel = localSprite.getData('nameLabel');
+    if (nameLabel) {
+      nameLabel.x = localSprite.x;
+      nameLabel.y = localSprite.y - TILE / 2 - 2;
+    }
 
     const frame = localSprite.getData('animFrame');
     const nextFrame = frame === 0 ? 2 : frame === 2 ? 1 : frame === 1 ? 3 : 0;

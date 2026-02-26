@@ -6,13 +6,14 @@ import OfficeScene from './scenes/OfficeScene.js';
 
 const TILE = 16;
 const SCALE = 3;
-const MAP_COLS = 44;
-const MAP_ROWS = 16;
+// Viewport shows a portion of the map; camera follows the player
+const VIEW_COLS = 22;
+const VIEW_ROWS = 14;
 
 const config = {
   type: Phaser.AUTO,
-  width: MAP_COLS * TILE,
-  height: MAP_ROWS * TILE,
+  width: VIEW_COLS * TILE,
+  height: VIEW_ROWS * TILE,
   parent: 'game-container',
   pixelArt: true,
   zoom: SCALE,
