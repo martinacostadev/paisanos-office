@@ -290,9 +290,11 @@ export default class OfficeScene extends Phaser.Scene {
 
   _worldToScreen(worldX, worldY) {
     const cam = this.cameras.main;
-    const zoom = cam.zoom;
-    const sx = (worldX - cam.scrollX) * zoom;
-    const sy = (worldY - cam.scrollY) * zoom;
+    // Config zoom (canvas scale) is game.config.zoom, camera zoom is cam.zoom
+    const configZoom = this.sys.game.config.zoom;
+    const totalZoom = cam.zoom * configZoom;
+    const sx = (worldX - cam.scrollX) * totalZoom;
+    const sy = (worldY - cam.scrollY) * totalZoom;
     return { x: sx, y: sy };
   }
 
