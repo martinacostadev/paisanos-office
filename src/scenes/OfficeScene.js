@@ -203,7 +203,7 @@ export default class OfficeScene extends Phaser.Scene {
 
       const px = sprite.getData('gridX');
       const py = sprite.getData('gridY');
-      const dist = Math.abs(lx - px) + Math.abs(ly - py); // Manhattan distance
+      const dist = Math.max(Math.abs(lx - px), Math.abs(ly - py)); // Chebyshev (includes diagonals)
 
       if (dist <= PROXIMITY_TILES) {
         nearbyPeers.add(peerId);
@@ -304,12 +304,20 @@ export default class OfficeScene extends Phaser.Scene {
     sprite.setData('gridY', data.y);
     sprite.setDepth(data.y + 0.5);
 
-    // Name label above sprite
+    // Name label above sprite (high resolution so it's not pixelated)
     const nameLabel = this.add.text(
       data.x * TILE + TILE / 2,
       data.y * TILE - 2,
       data.name || '',
-      { fontFamily: 'Arial', fontSize: '5px', color: '#ffffff', align: 'center' }
+      {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '4px',
+        color: '#ffffff',
+        align: 'center',
+        resolution: 4,
+        stroke: '#000000',
+        strokeThickness: 0.5,
+      }
     );
     nameLabel.setOrigin(0.5, 1);
     nameLabel.setDepth(9998);
@@ -427,24 +435,33 @@ export default class OfficeScene extends Phaser.Scene {
       this.add.image(col * TILE + TILE / 2, TILE / 2, 'ceiling-light').setDepth(0);
     });
 
-    this.placeSolid('smart-tv', 1, 4);
-    this.placeSolid('smart-tv', 1, 5);
-    this.placeSolid('smart-tv', 1, 6);
-    this.placeSolid('smart-tv', 2, 4);
-    this.placeSolid('smart-tv', 2, 5);
-    this.placeSolid('smart-tv', 2, 6);
+    // --- Big TV area ---
+    // Big screen on wall (2 wide x 4 tall)
+    this.placeSolid('big-tv-tl', 1, 3);
+    this.placeSolid('big-tv-tr', 2, 3);
+    this.placeSolid('big-tv-ml', 1, 4);
+    this.placeSolid('big-tv-mr', 2, 4);
+    this.placeSolid('big-tv-ml', 1, 5);
+    this.placeSolid('big-tv-mr', 2, 5);
+    this.placeSolid('big-tv-bl', 1, 6);
+    this.placeSolid('big-tv-br', 2, 6);
 
-    this.placeSolid('couch-top', 5, 3);
-    this.placeSolid('couch-mid', 5, 4);
-    this.placeSolid('couch-mid', 5, 5);
-    this.placeSolid('couch-bottom', 5, 6);
+    // Small table between TV and chairs
+    this.placeSolid('coffee-table', 3, 4);
+    this.placeSolid('coffee-table', 3, 5);
 
+    // Chairs facing the TV
+    this.placeDecor('office-chair', 4, 3);
+    this.placeDecor('office-chair', 4, 4);
+    this.placeDecor('office-chair', 4, 5);
+    this.placeDecor('office-chair', 4, 6);
+
+    // --- Lounge area (below) ---
     this.placeSolid('couch-top', 5, 8);
     this.placeSolid('couch-mid', 5, 9);
     this.placeSolid('couch-mid', 5, 10);
     this.placeSolid('couch-bottom', 5, 11);
 
-    this.placeSolid('coffee-table', 3, 5);
     this.placeSolid('coffee-table', 3, 9);
 
     this.placeSolid('plant', 7, 1);

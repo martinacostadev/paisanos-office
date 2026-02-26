@@ -501,35 +501,135 @@ export default class BootScene extends Phaser.Scene {
       g.fillRect(2, 12, 12, 2);
     });
 
-    // Smart TV (wall mounted, bright screen)
-    this.createTile('smart-tv', (g) => {
-      // Dark wall behind
+    // Big TV tiles (2 wide x 4 tall seamless screen)
+    // Top-left: wall + top bezel + screen top-left
+    this.createTile('big-tv-tl', (g) => {
       g.fillStyle(0x2a3330);
       g.fillRect(0, 0, TILE, TILE);
-      // TV frame (thin black bezel)
+      // Frame top + left
       g.fillStyle(0x0a0a0a);
-      g.fillRect(0, 1, TILE, 13);
-      // Bright screen
+      g.fillRect(0, 2, TILE, 14);
+      // Screen
+      g.fillStyle(0x1a1a3a);
+      g.fillRect(2, 4, 14, 12);
+      // Content: presentation slide header
       g.fillStyle(0x3366dd);
-      g.fillRect(1, 2, 14, 11);
-      // Screen content (bright presentation)
-      g.fillStyle(0x5599ff);
-      g.fillRect(2, 3, 6, 4);
+      g.fillRect(2, 4, 14, 3);
       g.fillStyle(0xffffff);
-      g.fillRect(9, 3, 5, 1);
-      g.fillRect(9, 5, 4, 1);
-      g.fillStyle(0xccddff);
-      g.fillRect(9, 7, 3, 1);
-      g.fillStyle(0xffcc44);
-      g.fillRect(2, 8, 8, 1);
+      g.fillRect(4, 5, 8, 1);
+      // Chart bars
       g.fillStyle(0x44dd66);
-      g.fillRect(2, 10, 5, 1);
+      g.fillRect(3, 9, 3, 5);
+      g.fillStyle(0x5599ff);
+      g.fillRect(7, 10, 3, 4);
+      g.fillStyle(0xffcc44);
+      g.fillRect(11, 8, 3, 6);
+    });
+    // Top-right
+    this.createTile('big-tv-tr', (g) => {
+      g.fillStyle(0x2a3330);
+      g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0x0a0a0a);
+      g.fillRect(0, 2, TILE, 14);
+      g.fillStyle(0x1a1a3a);
+      g.fillRect(0, 4, 14, 12);
+      // Content: slide header continued
+      g.fillStyle(0x3366dd);
+      g.fillRect(0, 4, 14, 3);
+      g.fillStyle(0xffffff);
+      g.fillRect(1, 5, 6, 1);
+      // More bars
       g.fillStyle(0xff6666);
-      g.fillRect(8, 10, 4, 1);
-      // Screen glow edge
+      g.fillRect(1, 9, 3, 5);
+      g.fillStyle(0xaa55cc);
+      g.fillRect(5, 11, 3, 3);
+      g.fillStyle(0x44bbdd);
+      g.fillRect(9, 8, 3, 6);
+    });
+    // Mid-left (screen body)
+    this.createTile('big-tv-ml', (g) => {
+      g.fillStyle(0x2a3330);
+      g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0x0a0a0a);
+      g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0x1a1a3a);
+      g.fillRect(2, 0, 14, TILE);
+      // Screen content: code/text lines
+      g.fillStyle(0x66dd66);
+      g.fillRect(4, 2, 8, 1);
+      g.fillStyle(0xdddd66);
+      g.fillRect(4, 4, 6, 1);
+      g.fillStyle(0x66bbff);
+      g.fillRect(4, 6, 10, 1);
+      g.fillStyle(0xff8866);
+      g.fillRect(4, 8, 5, 1);
+      g.fillStyle(0x66dd66);
+      g.fillRect(4, 10, 9, 1);
+      g.fillStyle(0xdddd66);
+      g.fillRect(4, 12, 7, 1);
+      g.fillStyle(0x66bbff);
+      g.fillRect(4, 14, 4, 1);
+    });
+    // Mid-right (screen body)
+    this.createTile('big-tv-mr', (g) => {
+      g.fillStyle(0x0a0a0a);
+      g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0x1a1a3a);
+      g.fillRect(0, 0, 14, TILE);
+      // Screen content: more lines
+      g.fillStyle(0x66dd66);
+      g.fillRect(1, 2, 5, 1);
+      g.fillStyle(0xdddd66);
+      g.fillRect(1, 4, 10, 1);
+      g.fillStyle(0xff8866);
+      g.fillRect(1, 6, 7, 1);
+      g.fillStyle(0x66bbff);
+      g.fillRect(1, 8, 8, 1);
+      g.fillStyle(0xdddd66);
+      g.fillRect(1, 10, 4, 1);
+      g.fillStyle(0x66dd66);
+      g.fillRect(1, 12, 9, 1);
+      g.fillStyle(0xff8866);
+      g.fillRect(1, 14, 6, 1);
+    });
+    // Bottom-left
+    this.createTile('big-tv-bl', (g) => {
+      g.fillStyle(0x2a3330);
+      g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0x0a0a0a);
+      g.fillRect(0, 0, TILE, 14);
+      g.fillStyle(0x1a1a3a);
+      g.fillRect(2, 0, 14, 12);
+      // Content: PAISANOS logo area
+      g.fillStyle(0xf5a623);
+      g.fillRect(3, 3, 2, 1);
+      g.fillRect(6, 3, 2, 1);
+      g.fillRect(9, 3, 2, 1);
+      g.fillRect(12, 3, 2, 1);
+      g.fillStyle(0x5599ff);
+      g.fillRect(4, 6, 8, 3);
+      // Glow
       g.fillStyle(0x4477cc, 0.3);
-      g.fillRect(0, 0, TILE, 1);
-      g.fillRect(0, 14, TILE, 1);
+      g.fillRect(0, 14, TILE, 2);
+    });
+    // Bottom-right
+    this.createTile('big-tv-br', (g) => {
+      g.fillStyle(0x2a3330);
+      g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0x0a0a0a);
+      g.fillRect(0, 0, TILE, 14);
+      g.fillStyle(0x1a1a3a);
+      g.fillRect(0, 0, 14, 12);
+      // Content
+      g.fillStyle(0xf5a623);
+      g.fillRect(1, 3, 2, 1);
+      g.fillRect(4, 3, 2, 1);
+      g.fillRect(7, 3, 2, 1);
+      g.fillStyle(0x5599ff);
+      g.fillRect(2, 6, 8, 3);
+      // Glow
+      g.fillStyle(0x4477cc, 0.3);
+      g.fillRect(0, 14, TILE, 2);
     });
 
     // Coffee table (small, between couches and TV)
