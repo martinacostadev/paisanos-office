@@ -10,7 +10,7 @@ const MAP_ROWS = 16;
 const WALKABLE = 0;
 const SOLID = 1;
 
-const PROXIMITY_TILES = 3; // How close (in tiles) to trigger video
+const PROXIMITY_TILES = 2; // How close (in tiles) to trigger video/audio
 
 export default class OfficeScene extends Phaser.Scene {
   constructor() {
@@ -50,17 +50,6 @@ export default class OfficeScene extends Phaser.Scene {
 
     socketManager.on('player:moved', (data) => {
       this.moveRemotePlayer(data.id, data.x, data.y);
-    });
-
-    // Server rejected our move (tile occupied by another player)
-    socketManager.on('player:move:reject', (data) => {
-      const localSprite = this.players.get(this.localId);
-      if (!localSprite) return;
-      localSprite.setData('gridX', data.x);
-      localSprite.setData('gridY', data.y);
-      localSprite.x = data.x * TILE + TILE / 2;
-      localSprite.y = data.y * TILE + TILE / 2;
-      localSprite.setDepth(data.y + 0.5);
     });
 
     socketManager.on('player:left', (data) => {
@@ -131,6 +120,13 @@ export default class OfficeScene extends Phaser.Scene {
       callbackScope: this,
       loop: true,
     });
+
+    // Camera follows local player so they stay centered
+    const localSprite = this.players.get(this.localId);
+    if (localSprite) {
+      this.cameras.main.startFollow(localSprite, true, 0.15, 0.15);
+      this.cameras.main.setBounds(0, 0, MAP_COLS * TILE, MAP_ROWS * TILE);
+    }
   }
 
   // --- Camera setup ---
@@ -167,7 +163,7 @@ export default class OfficeScene extends Phaser.Scene {
         panel.classList.add('cam-hidden');
         micBtn.classList.add('mic-btn-hidden');
         micBtn.classList.remove('mic-on');
-        micBtn.textContent = 'Mic';
+        micBtn.textContent = 'Open mic';
         this._hideRemoteVideo();
       }
     });
@@ -176,10 +172,10 @@ export default class OfficeScene extends Phaser.Scene {
       if (!webRTCManager.cameraOn) return;
       const isOn = webRTCManager.toggleMic();
       if (isOn) {
-        micBtn.textContent = 'Mic off';
+        micBtn.textContent = 'Close mic';
         micBtn.classList.add('mic-on');
       } else {
-        micBtn.textContent = 'Mic';
+        micBtn.textContent = 'Open mic';
         micBtn.classList.remove('mic-on');
       }
     });
@@ -705,11 +701,6 @@ export default class OfficeScene extends Phaser.Scene {
 
     if (newX < 0 || newX >= MAP_COLS || newY < 0 || newY >= MAP_ROWS) return;
     if (this.collisionMap[newY][newX] === SOLID) return;
-
-    for (const [id, sprite] of this.players) {
-      if (id === this.localId) continue;
-      if (sprite.getData('gridX') === newX && sprite.getData('gridY') === newY) return;
-    }
 
     localSprite.setData('gridX', newX);
     localSprite.setData('gridY', newY);

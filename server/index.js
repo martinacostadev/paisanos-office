@@ -19,15 +19,15 @@ const SHIRT_COLORS = [
   0x33aa66, 0xdd4466, 0x5577cc, 0xaa55cc, 0x44aaaa,
 ];
 
-// Safe spawn positions (walkable tiles away from furniture)
+// Safe spawn positions — center of the map first, then spreading out
 const SPAWN_POSITIONS = [
-  { x: 4, y: 3 }, { x: 4, y: 7 }, { x: 4, y: 11 },
-  { x: 7, y: 7 }, { x: 7, y: 9 },
-  { x: 9, y: 3 }, { x: 9, y: 5 }, { x: 9, y: 9 },
-  { x: 12, y: 3 }, { x: 12, y: 5 },
   { x: 14, y: 3 }, { x: 14, y: 5 },
+  { x: 12, y: 3 }, { x: 12, y: 5 },
   { x: 17, y: 3 }, { x: 17, y: 5 },
   { x: 19, y: 3 }, { x: 19, y: 5 },
+  { x: 9, y: 3 }, { x: 9, y: 5 }, { x: 9, y: 9 },
+  { x: 7, y: 7 }, { x: 7, y: 9 },
+  { x: 4, y: 3 }, { x: 4, y: 7 }, { x: 4, y: 11 },
   { x: 23, y: 3 }, { x: 24, y: 4 },
   { x: 30, y: 5 }, { x: 31, y: 7 }, { x: 33, y: 7 },
   { x: 35, y: 5 }, { x: 37, y: 7 }, { x: 38, y: 5 },
@@ -105,16 +105,6 @@ io.on('connection', (socket) => {
 
     // Basic bounds check
     if (newX < 0 || newX >= MAP_COLS || newY < 0 || newY >= MAP_ROWS) return;
-
-    // Check if another player already occupies the target tile
-    for (const [id, p] of players) {
-      if (id === socket.id) continue;
-      if (p.x === newX && p.y === newY) {
-        // Reject: send correction back to the client
-        socket.emit('player:move:reject', { x: player.x, y: player.y });
-        return;
-      }
-    }
 
     player.x = newX;
     player.y = newY;

@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import socketManager from '../network/SocketManager.js';
 
+const STORAGE_KEY = 'paisanos_user';
+
 export default class JoinScene extends Phaser.Scene {
   constructor() {
     super('JoinScene');
@@ -13,6 +15,18 @@ export default class JoinScene extends Phaser.Scene {
     const posInput = document.getElementById('join-position');
     const yearsInput = document.getElementById('join-years');
 
+    // Pre-fill from localStorage
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      if (saved) {
+        if (saved.name) nameInput.value = saved.name;
+        if (saved.position) posInput.value = saved.position;
+        if (saved.years) yearsInput.value = saved.years;
+      }
+    } catch (e) {
+      // ignore parse errors
+    }
+
     // Show the form
     form.classList.remove('form-hidden');
 
@@ -22,6 +36,13 @@ export default class JoinScene extends Phaser.Scene {
       const years = yearsInput.value.trim();
 
       if (!name || !position || !years) return;
+
+      // Save to localStorage for next time
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ name, position, years }));
+      } catch (e) {
+        // ignore storage errors
+      }
 
       btn.disabled = true;
       btn.textContent = 'CONNECTING...';
