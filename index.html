@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PAISANOS - Agentes Paisanos Office</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <!-- Join Form Overlay -->
+    <div id="join-form-overlay" class="form-hidden">
+      <div id="join-form-card">
+        <h2>JOIN THE OFFICE</h2>
+        <p class="join-subtitle">Enter your info to join as a worker</p>
+        <label for="join-name">Name</label>
+        <input type="text" id="join-name" placeholder="Your name" maxlength="24" />
+        <label for="join-position">Job Position</label>
+        <input type="text" id="join-position" placeholder="e.g. Full Stack Dev" maxlength="30" />
+        <label for="join-years">Years at Paisanos</label>
+        <input type="number" id="join-years" placeholder="e.g. 3" min="0" max="50" />
+        <button id="join-btn">JOIN</button>
+      </div>
+    </div>
+
+    <div id="app">
+      <header id="header">
+        <h1>PAISANOS</h1>
+        <p>Real-time multiplayer pixel office — move with arrow keys</p>
+      </header>
+      <div id="game-wrapper">
+        <div id="game-container"></div>
+      </div>
+    </div>
+    <!-- Camera panel (top-left) -->
+    <div id="cam-panel" class="cam-hidden">
+      <div id="cam-local-box" class="cam-box">
+        <video id="cam-local" autoplay muted playsinline></video>
+        <span id="cam-local-label">You</span>
+      </div>
+      <div id="cam-remote-box" class="cam-box cam-hidden">
+        <video id="cam-remote" autoplay playsinline></video>
+        <span id="cam-remote-label"></span>
+      </div>
+    </div>
+
+    <!-- Open cam / mic buttons -->
+    <button id="cam-toggle-btn" class="cam-btn-hidden">Open cam</button>
+    <button id="mic-toggle-btn" class="mic-btn-hidden">Mic</button>
+
+    <!-- Chat panel (bottom-right) -->
+    <div id="chat-panel" class="chat-hidden">
+      <div id="chat-header">
+        <span id="chat-header-icon">💬</span>
+        <span id="chat-header-title">OFFICE CHAT</span>
+        <button id="chat-toggle-btn">—</button>
+      </div>
+      <div id="chat-body">
+        <div id="chat-messages">
+          <div id="chat-welcome" class="chat-system-msg">Welcome to the office! Say hi to your team.</div>
+        </div>
+        <div id="chat-input-row">
+          <textarea id="chat-input" placeholder="Say something..." maxlength="200" rows="1"></textarea>
+          <button id="chat-send-btn">▶</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-overlay" class="modal-hidden">
+      <div id="modal-card">
+        <button id="modal-close">&times;</button>
+        <canvas id="modal-avatar" width="64" height="64"></canvas>
+        <div id="modal-name"></div>
+        <div id="modal-position"></div>
+        <div id="modal-years"></div>
+        <div id="modal-hint">Use arrow keys to move</div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
