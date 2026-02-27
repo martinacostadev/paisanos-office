@@ -40,6 +40,7 @@ function pickRandom(arr) {
 
 const SHIRT_STYLES = {
   'blue-lines': 0x4488cc,
+  'river': 0xffffff,
   'white-v': 0xffffff,
   'pink': 0xff69b4,
   'black-logo': 0x1a1a1a,

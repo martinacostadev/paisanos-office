@@ -16,6 +16,14 @@ export function drawWorker(g, color, frame) {
     // Boquita: wide yellow horizontal band across the entire shirt
     g.fillStyle(0xf5a623);
     g.fillRect(3, 9 + bounce, 10, 3); // thick band covering body + arms
+  } else if (color.shirtStyle === 'river') {
+    // River: big diagonal red band from top-left to bottom-right on white shirt
+    g.fillStyle(0xcc0000);
+    g.fillRect(5, 7 + bounce, 2, 1);
+    g.fillRect(5, 8 + bounce, 3, 1);
+    g.fillRect(6, 9 + bounce, 3, 1);
+    g.fillRect(7, 10 + bounce, 3, 1);
+    g.fillRect(8, 11 + bounce, 3, 1);
   } else if (color.shirtStyle === 'white-v') {
     // Velez: huge V from top corners to bottom center
     g.fillStyle(0x4488cc);
