@@ -563,22 +563,20 @@ export default class OfficeScene extends Phaser.Scene {
     this.placeSolid('big-plant', 29, 13);
     this.placeSolid('big-plant', 30, 13);
 
-    for (let c = 32; c <= 35; c++) {
-      this.placeSolid('pool-edge-h', c, 8);
+    // Pool — bottom-right corner of garden, touching walls
+    for (let c = 39; c <= 42; c++) {
+      this.placeSolid('pool-edge-h', c, 10);
     }
-    for (let r = 9; r <= 11; r++) {
-      for (let c = 32; c <= 35; c++) {
+    for (let r = 11; r <= 13; r++) {
+      for (let c = 39; c <= 42; c++) {
         this.placeSolid('pool-water', c, r);
       }
     }
-    for (let c = 32; c <= 35; c++) {
-      this.placeSolid('pool-edge-h', c, 12);
+    for (let c = 39; c <= 42; c++) {
+      this.placeSolid('pool-edge-h', c, 14);
     }
-    for (let r = 9; r <= 11; r++) {
-      this.placeSolid('pool-edge-v', 31, r);
-    }
-    for (let r = 9; r <= 11; r++) {
-      this.placeSolid('pool-edge-v', 36, r);
+    for (let r = 11; r <= 13; r++) {
+      this.placeSolid('pool-edge-v', 38, r);
     }
 
     this.placeSolid('tree', 29, 2);
@@ -709,6 +707,7 @@ export default class OfficeScene extends Phaser.Scene {
   }
 
   placeBigVerticalDesk(col, startRow) {
+    if (!this.chairPositions) this.chairPositions = new Set();
     const tileSequence = [
       'table-edge', 'table-laptop', 'table-items',
       'table-laptop2', 'table-laptop', 'table-items', 'table-edge'
@@ -721,12 +720,13 @@ export default class OfficeScene extends Phaser.Scene {
       this.placeSolid(tileSequence[r], col, startRow + r);
       this.placeSolid(tileSequence2[r], col + 1, startRow + r);
     }
-    this.placeDecor('office-chair', col - 1, startRow + 1);
-    this.placeDecor('office-chair', col - 1, startRow + 3);
-    this.placeDecor('office-chair', col - 1, startRow + 5);
-    this.placeDecor('office-chair', col + 2, startRow + 1);
-    this.placeDecor('office-chair', col + 2, startRow + 3);
-    this.placeDecor('office-chair', col + 2, startRow + 5);
+    const chairOffsets = [startRow + 1, startRow + 3, startRow + 5];
+    chairOffsets.forEach((row) => {
+      this.placeDecor('office-chair', col - 1, row);
+      this.placeDecor('office-chair', col + 2, row);
+      this.chairPositions.add(`${col - 1},${row}`);
+      this.chairPositions.add(`${col + 2},${row}`);
+    });
   }
 
   placeSolid(key, col, row) {
@@ -951,7 +951,52 @@ export default class OfficeScene extends Phaser.Scene {
     // Check teleport triggers
     this.checkTeleport(localSprite, newX, newY);
 
+    // Check chair sit / "EN REU" badge
+    this.checkChairStatus(localSprite, newX, newY);
+
     this.moveTimer = time;
+  }
+
+  checkChairStatus(sprite, x, y) {
+    if (!this.chairPositions) return;
+    const onChair = this.chairPositions.has(`${x},${y}`);
+    const wasOnChair = sprite.getData('onChair');
+
+    if (onChair && !wasOnChair) {
+      // Sat down — show "EN REU" badge and turn off camera
+      sprite.setData('onChair', true);
+      const nameEl = sprite.getData('nameEl');
+      if (nameEl) {
+        const originalName = sprite.getData('workerData')?.name || '';
+        nameEl.textContent = originalName + '\nEN REU';
+        nameEl.style.whiteSpace = 'pre';
+      }
+      // Auto turn off camera
+      if (webRTCManager.cameraOn) {
+        const btn = document.getElementById('cam-toggle-btn');
+        const panel = document.getElementById('cam-panel');
+        const micBtn = document.getElementById('mic-toggle-btn');
+        const localVideo = document.getElementById('cam-local');
+        webRTCManager.stopCamera();
+        localVideo.srcObject = null;
+        btn.textContent = 'Open cam';
+        btn.classList.remove('cam-on');
+        panel.classList.add('cam-hidden');
+        micBtn.classList.add('mic-btn-hidden');
+        micBtn.classList.remove('mic-on');
+        micBtn.textContent = 'Open mic';
+        this._hideRemoteVideo();
+      }
+    } else if (!onChair && wasOnChair) {
+      // Stood up — remove badge
+      sprite.setData('onChair', false);
+      const nameEl = sprite.getData('nameEl');
+      if (nameEl) {
+        const originalName = sprite.getData('workerData')?.name || '';
+        nameEl.textContent = originalName;
+        nameEl.style.whiteSpace = 'nowrap';
+      }
+    }
   }
 
   checkTeleport(sprite, x, y) {
