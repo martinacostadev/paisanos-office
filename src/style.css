@@ -590,3 +590,102 @@ body {
 #chat-send-btn:active {
   transform: scale(0.95);
 }
+
+/* === D-Pad Controls === */
+#dpad-controls {
+  display: none;
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 9999;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.dpad-mid-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.dpad-center {
+  width: 44px;
+  height: 44px;
+}
+
+.dpad-btn {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #f5a623;
+  background: rgba(26, 26, 46, 0.85);
+  border: 2px solid rgba(245, 166, 35, 0.5);
+  border-radius: 8px;
+  cursor: pointer;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dpad-btn:active,
+.dpad-btn.pressed {
+  background: rgba(245, 166, 35, 0.3);
+  border-color: #f5a623;
+}
+
+/* === Mobile Responsive === */
+@media (max-width: 768px) {
+  #dpad-controls {
+    display: flex;
+  }
+
+  #header h1 {
+    font-size: 18px;
+    letter-spacing: 4px;
+  }
+
+  #header p {
+    font-size: 7px;
+  }
+
+  #header {
+    padding: 10px;
+  }
+
+  #chat-panel {
+    bottom: 12px;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 360px;
+  }
+
+  #cam-toggle-btn,
+  #mic-toggle-btn {
+    font-size: 7px;
+    padding: 6px 10px;
+  }
+
+  #mic-toggle-btn {
+    left: 110px;
+  }
+
+  .cam-box {
+    width: 120px;
+    height: 90px;
+  }
+}
+
+/* Also show D-pad on touch devices regardless of width */
+@media (pointer: coarse) {
+  #dpad-controls {
+    display: flex;
+  }
+}

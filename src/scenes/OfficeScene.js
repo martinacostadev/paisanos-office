@@ -5,7 +5,7 @@ import { generateWorkerTextures, destroyWorkerTextures } from '../utils/workerTe
 
 const TILE = 16;
 const MAP_COLS = 44;
-const MAP_ROWS = 16;
+const MAP_ROWS = 32;
 
 const WALKABLE = 0;
 const SOLID = 1;
@@ -388,6 +388,11 @@ export default class OfficeScene extends Phaser.Scene {
     const sprite = this.players.get(id);
     if (!sprite) return;
 
+    // Flip sprite based on horizontal movement
+    const prevX = sprite.getData('gridX');
+    if (x > prevX) sprite.flipX = false;
+    else if (x < prevX) sprite.flipX = true;
+
     sprite.setData('gridX', x);
     sprite.setData('gridY', y);
     sprite.x = x * TILE + TILE / 2;
@@ -413,15 +418,25 @@ export default class OfficeScene extends Phaser.Scene {
       Array(MAP_COLS).fill(WALKABLE)
     );
 
-    for (let row = 0; row < MAP_ROWS; row++) {
+    // --- Office area (rows 0-15) ---
+    for (let row = 0; row < 16; row++) {
       for (let col = 0; col < MAP_COLS; col++) {
         let tileKey = null;
         let isSolid = false;
 
         if (row === 0) {
-          tileKey = col >= 28 ? 'hedge' : 'wall-dark-top';
-          isSolid = true;
-        } else if (row === MAP_ROWS - 1) {
+          // Bathroom doors in top wall
+          if ((col === 14 || col === 15)) {
+            tileKey = 'door-women';
+            isSolid = false; // walkable door
+          } else if ((col === 18 || col === 19)) {
+            tileKey = 'door-men';
+            isSolid = false; // walkable door
+          } else {
+            tileKey = col >= 28 ? 'hedge' : 'wall-dark-top';
+            isSolid = true;
+          }
+        } else if (row === 15) {
           tileKey = col >= 28 ? 'hedge' : 'wall-dark';
           isSolid = true;
         } else if (col === 0) {
@@ -457,6 +472,19 @@ export default class OfficeScene extends Phaser.Scene {
         }
       }
     }
+
+    // --- Extended area (rows 16-31): all solid by default ---
+    for (let row = 16; row < MAP_ROWS; row++) {
+      for (let col = 0; col < MAP_COLS; col++) {
+        this.collisionMap[row][col] = SOLID;
+      }
+    }
+
+    // --- Secret Room (cols 1-20, rows 17-30) ---
+    this.buildSecretRoom();
+
+    // --- Bathrooms (in extended area) ---
+    this.buildBathrooms();
 
     [1, 5, 10, 14].forEach((row) => {
       this.placeSolid('pillar', 8, row);
@@ -496,24 +524,19 @@ export default class OfficeScene extends Phaser.Scene {
     this.placeSolid('coffee-table', 3, 9);
 
     this.placeSolid('plant', 7, 1);
-    this.placeSolid('plant', 1, 13);
     this.placeSolid('wall-shelf', 1, 1);
     this.placeSolid('wall-shelf', 1, 2);
-    this.placeSolid('wall-shelf', 6, 14);
     this.placeDecor('backpack', 7, 12);
 
-    this.placeBigVerticalDesk(10, 6);
-    this.placeBigVerticalDesk(15, 6);
-    this.placeBigVerticalDesk(20, 6);
+    this.placeBigVerticalDesk(10, 7);
+    this.placeBigVerticalDesk(15, 7);
+    this.placeBigVerticalDesk(20, 7);
 
     this.placeSolid('wall-shelf', 12, 1);
     this.placeSolid('wall-shelf', 13, 1);
     this.placeSolid('wall-shelf', 17, 1);
     this.placeSolid('wall-shelf', 18, 1);
-    this.placeSolid('wall-shelf', 12, 14);
-    this.placeSolid('wall-shelf', 17, 14);
     this.placeSolid('plant', 9, 1);
-    this.placeSolid('plant', 9, 14);
     this.placeDecor('backpack', 13, 4);
     this.placeDecor('backpack', 18, 3);
 
@@ -532,8 +555,6 @@ export default class OfficeScene extends Phaser.Scene {
     this.placeSolid('coffee', 26, 4);
 
     this.placeSolid('coffee-table', 24, 3);
-
-    this.placeSolid('plant', 25, 14);
 
     for (let c = 28; c <= 31; c++) {
       this.add.image(c * TILE + TILE / 2, 7 * TILE + TILE / 2, 'garden-path');
@@ -583,6 +604,95 @@ export default class OfficeScene extends Phaser.Scene {
     this.placeSolid('flower2', 39, 3);
 
     this.placeSolid('hammock', 40, 7);
+
+    // Secret garden hole (teleport trigger — walkable)
+    this.add.image(38 * TILE + TILE / 2, 8 * TILE + TILE / 2, 'hole-tile').setDepth(0);
+    // Don't mark as solid — it's walkable
+
+    // Store teleport definitions: { fromCol, fromRow, toCol, toRow }
+    this.teleports = [
+      // Garden hole -> Secret room entrance
+      { fromCol: 38, fromRow: 8, toCol: 10, toRow: 20 },
+      // Secret room exit -> Garden
+      { fromCol: 10, fromRow: 17, toCol: 38, toRow: 7 },
+      { fromCol: 11, fromRow: 17, toCol: 38, toRow: 7 },
+      // Women's bathroom door (top wall) -> Women's bathroom
+      { fromCol: 14, fromRow: 0, toCol: 24, toRow: 22 },
+      { fromCol: 15, fromRow: 0, toCol: 25, toRow: 22 },
+      // Women's bathroom return -> Office
+      { fromCol: 24, fromRow: 17, toCol: 14, toRow: 1 },
+      { fromCol: 25, fromRow: 17, toCol: 15, toRow: 1 },
+      // Men's bathroom door (top wall) -> Men's bathroom
+      { fromCol: 18, fromRow: 0, toCol: 32, toRow: 22 },
+      { fromCol: 19, fromRow: 0, toCol: 33, toRow: 22 },
+      // Men's bathroom return -> Office
+      { fromCol: 32, fromRow: 17, toCol: 18, toRow: 1 },
+      { fromCol: 33, fromRow: 17, toCol: 19, toRow: 1 },
+    ];
+  }
+
+  buildSecretRoom() {
+    // Secret Room: cols 1-20, rows 17-30
+    // Walls around perimeter
+    for (let col = 1; col <= 20; col++) {
+      this.placeSolid('wall-dark', col, 17); // top wall (overwritten by return door below)
+      this.placeSolid('wall-dark', col, 30); // bottom wall
+    }
+    for (let row = 17; row <= 30; row++) {
+      this.placeSolid('wall-dark', 1, row);
+      this.placeSolid('wall-dark', 20, row);
+    }
+    // Floor + money decorations
+    for (let row = 18; row <= 29; row++) {
+      for (let col = 2; col <= 19; col++) {
+        const isMoney = (col + row) % 5 === 0;
+        const tileKey = isMoney ? 'money' : 'dark-floor';
+        this.add.image(col * TILE + TILE / 2, row * TILE + TILE / 2, tileKey);
+        this.collisionMap[row][col] = WALKABLE;
+      }
+    }
+    // Exit portal (return to garden) at row 17
+    this.add.image(10 * TILE + TILE / 2, 17 * TILE + TILE / 2, 'exit-portal').setDepth(17);
+    this.collisionMap[17][10] = WALKABLE;
+    this.add.image(11 * TILE + TILE / 2, 17 * TILE + TILE / 2, 'exit-portal').setDepth(17);
+    this.collisionMap[17][11] = WALKABLE;
+  }
+
+  buildBathrooms() {
+    // Women's bathroom: cols 22-28, rows 17-23
+    this.buildBathroomRoom(22, 28, 17, 23, 'door-women', 24, 25);
+    // Men's bathroom: cols 30-36, rows 17-23
+    this.buildBathroomRoom(30, 36, 17, 23, 'door-men', 32, 33);
+  }
+
+  buildBathroomRoom(colStart, colEnd, rowStart, rowEnd, doorKey, doorCol1, doorCol2) {
+    // Walls
+    for (let col = colStart; col <= colEnd; col++) {
+      this.placeSolid('bathroom-wall', col, rowStart);
+      this.placeSolid('bathroom-wall', col, rowEnd);
+    }
+    for (let row = rowStart; row <= rowEnd; row++) {
+      this.placeSolid('bathroom-wall', colStart, row);
+      this.placeSolid('bathroom-wall', colEnd, row);
+    }
+    // Floor
+    for (let row = rowStart + 1; row <= rowEnd - 1; row++) {
+      for (let col = colStart + 1; col <= colEnd - 1; col++) {
+        this.add.image(col * TILE + TILE / 2, row * TILE + TILE / 2, 'bathroom-floor');
+        this.collisionMap[row][col] = WALKABLE;
+      }
+    }
+    // Return doors at top wall
+    this.add.image(doorCol1 * TILE + TILE / 2, rowStart * TILE + TILE / 2, 'return-door').setDepth(rowStart);
+    this.collisionMap[rowStart][doorCol1] = WALKABLE;
+    this.add.image(doorCol2 * TILE + TILE / 2, rowStart * TILE + TILE / 2, 'return-door').setDepth(rowStart);
+    this.collisionMap[rowStart][doorCol2] = WALKABLE;
+    // Toilets (along back wall)
+    this.placeSolid('toilet', colStart + 1, rowEnd - 1);
+    this.placeSolid('toilet', colStart + 3, rowEnd - 1);
+    // Sinks (along side wall)
+    this.placeSolid('sink-tile', colEnd - 1, rowStart + 1);
+    this.placeSolid('sink-tile', colEnd - 1, rowStart + 3);
   }
 
   placeBigVerticalDesk(col, startRow) {
@@ -724,6 +834,25 @@ export default class OfficeScene extends Phaser.Scene {
 
   setupInput() {
     this.cursors = this.input.keyboard.createCursorKeys();
+    this.dpadDir = { dx: 0, dy: 0 };
+
+    // D-pad touch/mouse controls
+    const dpadMap = [
+      { id: 'dpad-up', dx: 0, dy: -1 },
+      { id: 'dpad-down', dx: 0, dy: 1 },
+      { id: 'dpad-left', dx: -1, dy: 0 },
+      { id: 'dpad-right', dx: 1, dy: 0 },
+    ];
+    dpadMap.forEach(({ id, dx, dy }) => {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      const start = (e) => { e.preventDefault(); this.dpadDir = { dx, dy }; btn.classList.add('pressed'); };
+      const stop = (e) => { e.preventDefault(); this.dpadDir = { dx: 0, dy: 0 }; btn.classList.remove('pressed'); };
+      btn.addEventListener('pointerdown', start);
+      btn.addEventListener('pointerup', stop);
+      btn.addEventListener('pointerleave', stop);
+      btn.addEventListener('pointercancel', stop);
+    });
 
     this.input.on('pointerdown', (pointer) => {
       const worldX = pointer.worldX;
@@ -764,6 +893,12 @@ export default class OfficeScene extends Phaser.Scene {
     else if (this.cursors.up.isDown) dy = -1;
     else if (this.cursors.down.isDown) dy = 1;
 
+    // D-pad fallback
+    if (dx === 0 && dy === 0 && this.dpadDir) {
+      dx = this.dpadDir.dx;
+      dy = this.dpadDir.dy;
+    }
+
     if (dx === 0 && dy === 0) return;
 
     const gridX = localSprite.getData('gridX');
@@ -773,6 +908,10 @@ export default class OfficeScene extends Phaser.Scene {
 
     if (newX < 0 || newX >= MAP_COLS || newY < 0 || newY >= MAP_ROWS) return;
     if (this.collisionMap[newY][newX] === SOLID) return;
+
+    // Flip sprite based on horizontal direction
+    if (dx === -1) localSprite.flipX = true;
+    else if (dx === 1) localSprite.flipX = false;
 
     localSprite.setData('gridX', newX);
     localSprite.setData('gridY', newY);
@@ -793,7 +932,26 @@ export default class OfficeScene extends Phaser.Scene {
 
     socketManager.sendMove(newX, newY);
 
+    // Check teleport triggers
+    this.checkTeleport(localSprite, newX, newY);
+
     this.moveTimer = time;
+  }
+
+  checkTeleport(sprite, x, y) {
+    if (!this.teleports) return;
+    for (const tp of this.teleports) {
+      if (x === tp.fromCol && y === tp.fromRow) {
+        sprite.setData('gridX', tp.toCol);
+        sprite.setData('gridY', tp.toRow);
+        sprite.x = tp.toCol * TILE + TILE / 2;
+        sprite.y = tp.toRow * TILE + TILE / 2;
+        sprite.setDepth(tp.toRow + 0.5);
+        this._updateSpriteLabels(sprite);
+        socketManager.sendMove(tp.toCol, tp.toRow);
+        break;
+      }
+    }
   }
 
   // --- Chat ---

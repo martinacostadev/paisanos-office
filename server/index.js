@@ -61,7 +61,7 @@ function findSpawnPosition(players) {
 const players = new Map();
 
 const MAP_COLS = 44;
-const MAP_ROWS = 16;
+const MAP_ROWS = 32;
 
 io.on('connection', (socket) => {
   console.log(`Connected: ${socket.id}`);

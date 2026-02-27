@@ -903,6 +903,227 @@ export default class BootScene extends Phaser.Scene {
       g.fillRect(3, 6, 10, 1);
     });
 
+    // --- Secret Room & Bathroom Textures ---
+
+    // Dark floor for secret room
+    this.createTile('dark-floor', (g) => {
+      g.fillStyle(0x1a1a2e);
+      g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0x22223a);
+      g.fillRect(2, 2, 4, 4);
+      g.fillRect(9, 8, 5, 5);
+      g.fillStyle(0x161628);
+      g.fillRect(0, 7, TILE, 1);
+      g.fillRect(7, 0, 1, TILE);
+    });
+
+    // Hole tile (teleport to secret room)
+    this.createTile('hole-tile', (g) => {
+      // Garden base
+      g.fillStyle(0x4a8c3f);
+      g.fillRect(0, 0, TILE, TILE);
+      // Dark hole
+      g.fillStyle(0x0a0a0a);
+      g.fillRect(2, 2, 12, 12);
+      g.fillStyle(0x050510);
+      g.fillRect(3, 3, 10, 10);
+      // Gold glow border
+      g.fillStyle(0xf5a623);
+      g.fillRect(2, 2, 12, 1);
+      g.fillRect(2, 13, 12, 1);
+      g.fillRect(2, 2, 1, 12);
+      g.fillRect(13, 2, 1, 12);
+      // Sparkle
+      g.fillStyle(0xffdd44);
+      g.fillRect(5, 5, 1, 1);
+      g.fillRect(10, 8, 1, 1);
+      g.fillRect(7, 10, 1, 1);
+    });
+
+    // Money tile (dark floor with dollar bills)
+    this.createTile('money', (g) => {
+      // Dark floor base
+      g.fillStyle(0x1a1a2e);
+      g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0x22223a);
+      g.fillRect(2, 2, 4, 4);
+      // Dollar bill 1
+      g.fillStyle(0x2d8b2d);
+      g.fillRect(2, 3, 6, 4);
+      g.fillStyle(0x3aaa3a);
+      g.fillRect(3, 4, 4, 2);
+      g.fillStyle(0xffffff);
+      g.fillRect(4, 4, 2, 2);
+      // Dollar bill 2
+      g.fillStyle(0x2d8b2d);
+      g.fillRect(8, 9, 6, 4);
+      g.fillStyle(0x3aaa3a);
+      g.fillRect(9, 10, 4, 2);
+      g.fillStyle(0xffffff);
+      g.fillRect(10, 10, 2, 2);
+    });
+
+    // Exit portal (return from secret room)
+    this.createTile('exit-portal', (g) => {
+      // Dark floor base
+      g.fillStyle(0x1a1a2e);
+      g.fillRect(0, 0, TILE, TILE);
+      // Portal circle
+      g.fillStyle(0x4444cc);
+      g.fillRect(2, 2, 12, 12);
+      g.fillStyle(0x5566ee);
+      g.fillRect(3, 3, 10, 10);
+      g.fillStyle(0x7788ff);
+      g.fillRect(5, 5, 6, 6);
+      // Swirl hint
+      g.fillStyle(0xaabbff);
+      g.fillRect(6, 6, 4, 4);
+      g.fillStyle(0xffffff);
+      g.fillRect(7, 7, 2, 2);
+    });
+
+    // Women's bathroom door
+    this.createTile('door-women', (g) => {
+      // Wall frame
+      g.fillStyle(0x222a28);
+      g.fillRect(0, 0, TILE, TILE);
+      // Door
+      g.fillStyle(0x8b6b4a);
+      g.fillRect(2, 2, 12, 14);
+      g.fillStyle(0xa07850);
+      g.fillRect(3, 3, 10, 12);
+      // Female symbol (simple triangle dress shape)
+      g.fillStyle(0xff69b4);
+      g.fillRect(6, 4, 4, 2);
+      g.fillRect(5, 6, 6, 4);
+      g.fillRect(7, 10, 2, 3);
+      // Handle
+      g.fillStyle(0xcccccc);
+      g.fillRect(10, 8, 2, 2);
+    });
+
+    // Men's bathroom door
+    this.createTile('door-men', (g) => {
+      // Wall frame
+      g.fillStyle(0x222a28);
+      g.fillRect(0, 0, TILE, TILE);
+      // Door
+      g.fillStyle(0x8b6b4a);
+      g.fillRect(2, 2, 12, 14);
+      g.fillStyle(0xa07850);
+      g.fillRect(3, 3, 10, 12);
+      // Male symbol (rectangle body)
+      g.fillStyle(0x4488cc);
+      g.fillRect(6, 4, 4, 2);
+      g.fillRect(5, 6, 6, 3);
+      g.fillRect(6, 9, 2, 2);
+      g.fillRect(8, 9, 2, 2);
+      g.fillRect(7, 11, 2, 2);
+      // Handle
+      g.fillStyle(0xcccccc);
+      g.fillRect(10, 8, 2, 2);
+    });
+
+    // Bathroom floor tile
+    this.createTile('bathroom-floor', (g) => {
+      g.fillStyle(0xccccbb);
+      g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0xbbbbaa);
+      g.fillRect(0, 0, TILE, 1);
+      g.fillRect(0, 0, 1, TILE);
+      g.fillRect(0, 7, TILE, 1);
+      g.fillRect(7, 0, 1, TILE);
+      g.fillStyle(0xddddcc);
+      g.fillRect(1, 1, 6, 6);
+      g.fillRect(8, 8, 7, 7);
+    });
+
+    // Toilet
+    this.createTile('toilet', (g) => {
+      // Floor
+      g.fillStyle(0xccccbb);
+      g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0xbbbbaa);
+      g.fillRect(0, 7, TILE, 1);
+      g.fillRect(7, 0, 1, TILE);
+      // Toilet bowl
+      g.fillStyle(0xeeeeee);
+      g.fillRect(4, 5, 8, 9);
+      g.fillStyle(0xffffff);
+      g.fillRect(5, 6, 6, 7);
+      // Tank
+      g.fillStyle(0xdddddd);
+      g.fillRect(5, 1, 6, 4);
+      g.fillStyle(0xcccccc);
+      g.fillRect(6, 2, 4, 2);
+      // Flush handle
+      g.fillStyle(0x999999);
+      g.fillRect(9, 1, 2, 1);
+      // Seat
+      g.fillStyle(0xdddddd);
+      g.fillRect(5, 5, 6, 1);
+    });
+
+    // Sink tile
+    this.createTile('sink-tile', (g) => {
+      // Floor
+      g.fillStyle(0xccccbb);
+      g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0xbbbbaa);
+      g.fillRect(0, 7, TILE, 1);
+      g.fillRect(7, 0, 1, TILE);
+      // Sink counter
+      g.fillStyle(0xaaaaaa);
+      g.fillRect(2, 6, 12, 8);
+      g.fillStyle(0xbbbbbb);
+      g.fillRect(3, 7, 10, 6);
+      // Basin
+      g.fillStyle(0x888888);
+      g.fillRect(5, 8, 6, 4);
+      g.fillStyle(0x4488cc);
+      g.fillRect(6, 9, 4, 2);
+      // Faucet
+      g.fillStyle(0x999999);
+      g.fillRect(7, 3, 2, 4);
+      g.fillRect(6, 3, 4, 1);
+      // Mirror above
+      g.fillStyle(0x88bbdd);
+      g.fillRect(4, 0, 8, 3);
+      g.fillStyle(0xaaddee);
+      g.fillRect(5, 0, 6, 2);
+    });
+
+    // Bathroom wall
+    this.createTile('bathroom-wall', (g) => {
+      g.fillStyle(0xccccbb);
+      g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0xbbbbaa);
+      g.fillRect(1, 1, TILE - 2, TILE - 2);
+      g.fillStyle(0xccccbb);
+      g.fillRect(0, 7, TILE, 2);
+      g.fillRect(7, 0, 2, TILE);
+    });
+
+    // Return door (from bathroom/secret room back to office)
+    this.createTile('return-door', (g) => {
+      // Wall frame
+      g.fillStyle(0xccccbb);
+      g.fillRect(0, 0, TILE, TILE);
+      // Door
+      g.fillStyle(0x8b6b4a);
+      g.fillRect(2, 2, 12, 14);
+      g.fillStyle(0xa07850);
+      g.fillRect(3, 3, 10, 12);
+      // Arrow pointing up (exit)
+      g.fillStyle(0x44dd66);
+      g.fillRect(7, 4, 2, 7);
+      g.fillRect(5, 6, 2, 2);
+      g.fillRect(9, 6, 2, 2);
+      // Handle
+      g.fillStyle(0xcccccc);
+      g.fillRect(10, 9, 2, 2);
+    });
+
     // Big garden plant (large tropical)
     this.createTile('big-plant', (g) => {
       // Pot
