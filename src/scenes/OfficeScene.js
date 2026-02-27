@@ -1044,9 +1044,15 @@ export default class OfficeScene extends Phaser.Scene {
 
     // Collapse / expand toggle
     const header = document.getElementById('chat-header');
+    const dpadControls = document.getElementById('dpad-controls');
     header.addEventListener('click', () => {
       chatPanel.classList.toggle('chat-collapsed');
-      chatToggle.textContent = chatPanel.classList.contains('chat-collapsed') ? '\u25B2' : '\u25BC';
+      const collapsed = chatPanel.classList.contains('chat-collapsed');
+      chatToggle.textContent = collapsed ? '\u25B2' : '\u25BC';
+      // Hide/show D-pad when chat opens/closes
+      if (dpadControls) {
+        dpadControls.style.visibility = collapsed ? '' : 'hidden';
+      }
     });
 
     const sendMessage = () => {
@@ -1067,6 +1073,7 @@ export default class OfficeScene extends Phaser.Scene {
       this.chatInput.blur();
       chatPanel.classList.add('chat-collapsed');
       chatToggle.textContent = '\u25B2';
+      if (dpadControls) dpadControls.style.visibility = '';
     };
 
     this.chatSendBtn.addEventListener('click', sendMessage);
@@ -1089,6 +1096,7 @@ export default class OfficeScene extends Phaser.Scene {
         if (chatPanel.classList.contains('chat-collapsed')) {
           chatPanel.classList.remove('chat-collapsed');
           chatToggle.textContent = '\u25BC';
+          if (dpadControls) dpadControls.style.visibility = 'hidden';
         }
         this.chatInput.focus();
       }
