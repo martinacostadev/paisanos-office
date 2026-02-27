@@ -21,7 +21,7 @@ export default class OfficeScene extends Phaser.Scene {
     this.moveTimer = 0;
     this.cameraPeers = new Set(); // IDs of players with camera on
     this.micPeers = new Set(); // IDs of players with mic on
-    this.currentNearbyId = null; // Currently displayed remote video peer
+    this.currentNearbyIds = new Set(); // Currently displayed remote video peers
   }
 
   create() {
@@ -165,7 +165,7 @@ export default class OfficeScene extends Phaser.Scene {
         micBtn.classList.add('mic-btn-hidden');
         micBtn.classList.remove('mic-on');
         micBtn.textContent = 'Open mic';
-        this._hideRemoteVideo();
+        this._hideAllRemoteVideos();
       }
     });
 
@@ -191,9 +191,6 @@ export default class OfficeScene extends Phaser.Scene {
     const lx = localSprite.getData('gridX');
     const ly = localSprite.getData('gridY');
 
-    let closestId = null;
-    let closestDist = Infinity;
-
     // Build set of nearby peers (within PROXIMITY_TILES)
     const nearbyPeers = new Set();
 
@@ -204,28 +201,27 @@ export default class OfficeScene extends Phaser.Scene {
 
       const px = sprite.getData('gridX');
       const py = sprite.getData('gridY');
-      const dist = Math.max(Math.abs(lx - px), Math.abs(ly - py)); // Chebyshev (includes diagonals)
+      const dist = Math.max(Math.abs(lx - px), Math.abs(ly - py));
 
       if (dist <= PROXIMITY_TILES) {
         nearbyPeers.add(peerId);
-        if (dist < closestDist) {
-          closestDist = dist;
-          closestId = peerId;
-        }
       }
     }
 
-    // Video: show closest peer's video
-    if (closestId !== this.currentNearbyId) {
-      this.currentNearbyId = closestId;
-      if (closestId) {
-        this._showRemoteVideo(closestId);
+    // Add new nearby peers, remove ones that left
+    for (const peerId of nearbyPeers) {
+      if (!this.currentNearbyIds.has(peerId)) {
+        this._addRemoteVideo(peerId);
       } else {
-        this._hideRemoteVideo();
+        this._refreshRemoteVideo(peerId);
       }
-    } else if (closestId) {
-      this._refreshRemoteVideo(closestId);
     }
+    for (const peerId of this.currentNearbyIds) {
+      if (!nearbyPeers.has(peerId)) {
+        this._removeRemoteVideo(peerId);
+      }
+    }
+    this.currentNearbyIds = nearbyPeers;
 
     // Audio: unmute nearby peers with mic on, mute everyone else
     for (const [peerId] of webRTCManager.audioElements) {
@@ -234,36 +230,53 @@ export default class OfficeScene extends Phaser.Scene {
     }
   }
 
-  _showRemoteVideo(peerId) {
-    const remoteBox = document.getElementById('cam-remote-box');
-    const remoteVideo = document.getElementById('cam-remote');
-    const remoteLabel = document.getElementById('cam-remote-label');
+  _addRemoteVideo(peerId) {
+    const container = document.getElementById('cam-remote-container');
+    // Don't duplicate
+    if (document.getElementById(`cam-remote-${peerId}`)) return;
 
+    const box = document.createElement('div');
+    box.id = `cam-remote-${peerId}`;
+    box.className = 'cam-box';
+
+    const video = document.createElement('video');
+    video.autoplay = true;
+    video.playsInline = true;
     const stream = webRTCManager.getRemoteStream(peerId);
-    if (stream && remoteVideo.srcObject !== stream) {
-      remoteVideo.srcObject = stream;
-    }
+    if (stream) video.srcObject = stream;
 
+    const label = document.createElement('span');
     const sprite = this.players.get(peerId);
-    const name = sprite?.getData('workerData')?.name || 'Nearby';
-    remoteLabel.textContent = name;
-    remoteBox.classList.remove('cam-hidden');
+    label.textContent = sprite?.getData('workerData')?.name || 'Nearby';
+
+    box.appendChild(video);
+    box.appendChild(label);
+    container.appendChild(box);
   }
 
   _refreshRemoteVideo(peerId) {
-    const remoteVideo = document.getElementById('cam-remote');
+    const box = document.getElementById(`cam-remote-${peerId}`);
+    if (!box) return;
+    const video = box.querySelector('video');
     const stream = webRTCManager.getRemoteStream(peerId);
-    if (stream && remoteVideo.srcObject !== stream) {
-      remoteVideo.srcObject = stream;
+    if (stream && video.srcObject !== stream) {
+      video.srcObject = stream;
     }
   }
 
-  _hideRemoteVideo() {
-    const remoteBox = document.getElementById('cam-remote-box');
-    const remoteVideo = document.getElementById('cam-remote');
-    remoteBox.classList.add('cam-hidden');
-    remoteVideo.srcObject = null;
-    this.currentNearbyId = null;
+  _removeRemoteVideo(peerId) {
+    const box = document.getElementById(`cam-remote-${peerId}`);
+    if (box) {
+      const video = box.querySelector('video');
+      if (video) video.srcObject = null;
+      box.remove();
+    }
+  }
+
+  _hideAllRemoteVideos() {
+    const container = document.getElementById('cam-remote-container');
+    if (container) container.innerHTML = '';
+    this.currentNearbyIds = new Set();
   }
 
   _requestSync() {
@@ -979,15 +992,17 @@ export default class OfficeScene extends Phaser.Scene {
     const wasOnChair = sprite.getData('onChair');
 
     if (onChair && !wasOnChair) {
-      // Sat down — show "EN REU" badge and turn off camera
+      // Sat down — show "EN REU" badge and turn off camera/mic
       sprite.setData('onChair', true);
+      sprite.setData('camWasOn', webRTCManager.cameraOn);
+      sprite.setData('micWasOn', webRTCManager.micOn);
       const nameEl = sprite.getData('nameEl');
       if (nameEl) {
         const originalName = sprite.getData('workerData')?.name || '';
         nameEl.textContent = originalName + '\nEN REU';
         nameEl.style.whiteSpace = 'pre';
       }
-      // Auto turn off camera
+      // Auto turn off camera and mic
       if (webRTCManager.cameraOn) {
         const btn = document.getElementById('cam-toggle-btn');
         const panel = document.getElementById('cam-panel');
@@ -1001,16 +1016,42 @@ export default class OfficeScene extends Phaser.Scene {
         micBtn.classList.add('mic-btn-hidden');
         micBtn.classList.remove('mic-on');
         micBtn.textContent = 'Open mic';
-        this._hideRemoteVideo();
+        this._hideAllRemoteVideos();
       }
     } else if (!onChair && wasOnChair) {
-      // Stood up — remove badge
+      // Stood up — remove badge and restore camera/mic
       sprite.setData('onChair', false);
       const nameEl = sprite.getData('nameEl');
       if (nameEl) {
         const originalName = sprite.getData('workerData')?.name || '';
         nameEl.textContent = originalName;
         nameEl.style.whiteSpace = 'nowrap';
+      }
+      // Restore camera if it was on before sitting
+      if (sprite.getData('camWasOn')) {
+        const btn = document.getElementById('cam-toggle-btn');
+        const panel = document.getElementById('cam-panel');
+        const micBtn = document.getElementById('mic-toggle-btn');
+        const localVideo = document.getElementById('cam-local');
+        (async () => {
+          try {
+            const stream = await webRTCManager.startCamera();
+            localVideo.srcObject = stream;
+            btn.textContent = 'Close cam';
+            btn.classList.add('cam-on');
+            panel.classList.remove('cam-hidden');
+            micBtn.classList.remove('mic-btn-hidden');
+            await webRTCManager.connectToExistingPeers(this.cameraPeers);
+            // Restore mic if it was on
+            if (sprite.getData('micWasOn') && !webRTCManager.micOn) {
+              webRTCManager.toggleMic();
+              micBtn.textContent = 'Close mic';
+              micBtn.classList.add('mic-on');
+            }
+          } catch (err) {
+            console.error('Camera restore error:', err);
+          }
+        })();
       }
     }
   }

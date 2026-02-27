@@ -129,6 +129,35 @@ body {
   color: #555;
 }
 
+#shirt-picker {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.shirt-option {
+  width: 36px;
+  height: 36px;
+  border: 2px solid #555;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, transform 0.1s;
+}
+
+.shirt-option:hover {
+  transform: scale(1.1);
+}
+
+.shirt-option.selected {
+  border-color: #f5a623;
+  box-shadow: 0 0 8px rgba(245, 166, 35, 0.5);
+}
+
 #join-btn {
   display: block;
   width: 100%;

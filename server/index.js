@@ -38,11 +38,20 @@ function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function randomColor() {
+const SHIRT_STYLES = {
+  'blue-lines': 0x4488cc,
+  'white-v': 0xffffff,
+  'pink': 0xff69b4,
+  'black-logo': 0x1a1a1a,
+};
+
+function randomColor(shirtStyle) {
+  const shirt = SHIRT_STYLES[shirtStyle] || pickRandom(SHIRT_COLORS);
   return {
     skin: pickRandom(SKIN_COLORS),
     hair: pickRandom(HAIR_COLORS),
-    shirt: pickRandom(SHIRT_COLORS),
+    shirt,
+    shirtStyle: shirtStyle || null,
   };
 }
 
@@ -67,7 +76,7 @@ io.on('connection', (socket) => {
   console.log(`Connected: ${socket.id}`);
 
   socket.on('player:join', (data) => {
-    const color = randomColor();
+    const color = randomColor(data.shirtStyle);
     const pos = findSpawnPosition(players);
 
     const player = {

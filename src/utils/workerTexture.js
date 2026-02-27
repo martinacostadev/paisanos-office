@@ -11,7 +11,26 @@ export function drawWorker(g, color, frame) {
   g.fillStyle(color.shirt);
   g.fillRect(5, 7 + bounce, 6, 5);
 
+  // Shirt design overlay
+  if (color.shirtStyle === 'blue-lines') {
+    g.fillStyle(0xffffff);
+    g.fillRect(5, 9 + bounce, 6, 1);
+    g.fillRect(5, 11 + bounce, 6, 1);
+  } else if (color.shirtStyle === 'white-v') {
+    g.fillStyle(0x4488cc);
+    g.fillRect(5, 7 + bounce, 1, 1);
+    g.fillRect(6, 8 + bounce, 1, 1);
+    g.fillRect(7, 9 + bounce, 2, 1);
+    g.fillRect(9, 8 + bounce, 1, 1);
+    g.fillRect(10, 7 + bounce, 1, 1);
+  } else if (color.shirtStyle === 'black-logo') {
+    g.fillStyle(0xffffff);
+    g.fillRect(7, 8 + bounce, 2, 3);
+    g.fillRect(6, 9 + bounce, 4, 1);
+  }
+
   // Arms
+  g.fillStyle(color.shirt);
   if (frame % 2 === 0) {
     g.fillRect(3, 8 + bounce, 2, 4);
     g.fillRect(11, 8 + bounce, 2, 4);

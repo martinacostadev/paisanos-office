@@ -27,6 +27,28 @@ export default class JoinScene extends Phaser.Scene {
       // ignore parse errors
     }
 
+    // Shirt picker
+    let selectedShirt = 'blue-lines';
+    const shirtOptions = document.querySelectorAll('.shirt-option');
+    shirtOptions.forEach((opt) => {
+      opt.addEventListener('click', () => {
+        shirtOptions.forEach((o) => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        selectedShirt = opt.dataset.shirt;
+      });
+    });
+
+    // Pre-fill shirt from localStorage
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      if (saved && saved.shirtStyle) {
+        selectedShirt = saved.shirtStyle;
+        shirtOptions.forEach((o) => {
+          o.classList.toggle('selected', o.dataset.shirt === selectedShirt);
+        });
+      }
+    } catch (e) { /* ignore */ }
+
     // Show the form
     form.classList.remove('form-hidden');
 
@@ -39,7 +61,7 @@ export default class JoinScene extends Phaser.Scene {
 
       // Save to localStorage for next time
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ name, position, years }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ name, position, years, shirtStyle: selectedShirt }));
       } catch (e) {
         // ignore storage errors
       }
@@ -61,7 +83,7 @@ export default class JoinScene extends Phaser.Scene {
         this.scene.start('BootScene');
       });
 
-      socketManager.join({ name, position, years });
+      socketManager.join({ name, position, years, shirtStyle: selectedShirt });
     };
 
     btn.addEventListener('click', onJoin);
