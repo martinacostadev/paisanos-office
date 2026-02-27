@@ -617,7 +617,7 @@ export default class OfficeScene extends Phaser.Scene {
     this.placeSolid('plant', 9, 1);
 
     for (let r = 1; r <= 4; r++) {
-      this.placeSolid('kitchen-wall', 22, r);
+      this.placeSolid('kitchen-wall', 20, r);
     }
     this.placeSolid('kitchen-wall', 25, 5);
     this.placeSolid('kitchen-wall', 26, 5);
@@ -630,6 +630,7 @@ export default class OfficeScene extends Phaser.Scene {
     this.placeSolid('kitchen-counter', 26, 3);
     this.placeSolid('coffee', 26, 4);
 
+    this.placeSolid('coffee-table', 22, 3);
     this.placeSolid('coffee-table', 24, 3);
 
     for (let c = 28; c <= 31; c++) {
@@ -1307,7 +1308,7 @@ export default class OfficeScene extends Phaser.Scene {
     const bots = [
       { name: 'Dani La Muerte', texture: 'bot-dani', col: 9, row: 9, phrases: botPhrases, nameColor: '#00ff88' },
       { name: 'PaisaBot', texture: 'bot-paisabot', col: 12, row: 11, phrases: botPhrases, nameColor: '#00ff88' },
-      { name: 'Chef Paisano', texture: 'chef-npc', col: 24, row: 2, phrases: chefPhrases, nameColor: '#ffcc44' },
+      { name: 'Chef Paisano', texture: 'chef-npc', col: 21, row: 2, phrases: chefPhrases, nameColor: '#ffcc44' },
     ];
 
     this.botSprites = [];
@@ -1368,7 +1369,7 @@ export default class OfficeScene extends Phaser.Scene {
     const container = this._getOverlayContainer();
     const el = document.createElement('div');
     el.textContent = displayMsg;
-    el.style.cssText = 'position:absolute;transform:translate(-50%,-100%);background:rgba(0,255,136,0.15);color:#00ff88;border:1px solid #00ff88;font:12px Arial,sans-serif;padding:4px 8px;border-radius:6px;max-width:180px;word-wrap:break-word;text-align:center;pointer-events:none;box-shadow:0 0 8px rgba(0,255,136,0.3);';
+    el.style.cssText = 'position:absolute;transform:translate(-50%,-100%);background:rgba(255,255,255,0.95);color:#111;font:12px Arial,sans-serif;padding:4px 8px;border-radius:6px;max-width:160px;word-wrap:break-word;text-align:center;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,0.3);';
     container.appendChild(el);
     sprite.setData('speechEl', el);
 
