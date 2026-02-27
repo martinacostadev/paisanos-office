@@ -81,6 +81,9 @@ export default class OfficeScene extends Phaser.Scene {
 
     // Chat message listener
     socketManager.on('chat:message', (data) => {
+      if (data.message) {
+        data.message = data.message.charAt(0).toUpperCase() + data.message.slice(1);
+      }
       this.addChatToPanel(data);
       this.showSpeechBubble(data.id, data.message);
     });
@@ -1175,8 +1178,9 @@ export default class OfficeScene extends Phaser.Scene {
     });
 
     const sendMessage = () => {
-      const text = this.chatInput.value.trim();
+      let text = this.chatInput.value.trim();
       if (!text) return;
+      text = text.charAt(0).toUpperCase() + text.slice(1);
       // Show in chat panel
       this.addChatToPanel({
         id: this.localId,
@@ -1309,7 +1313,7 @@ export default class OfficeScene extends Phaser.Scene {
     ];
 
     const bots = [
-      { name: 'Dani La Muerte', texture: 'bot-dani', col: 9, row: 9, phrases: botPhrases, nameColor: '#00ff88' },
+      { name: 'NinjaBot', texture: 'bot-dani', col: 9, row: 9, phrases: botPhrases, nameColor: '#00ff88' },
       { name: 'PaisaBot', texture: 'bot-paisabot', col: 12, row: 11, phrases: botPhrases, nameColor: '#00ff88' },
       { name: 'Chef Paisano', texture: 'chef-npc', col: 21, row: 2, phrases: chefPhrases, nameColor: '#ffcc44' },
     ];

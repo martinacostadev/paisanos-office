@@ -924,16 +924,16 @@ export default class BootScene extends Phaser.Scene {
       g.fillRect(0, 0, TILE, TILE);
       // Black sign board
       g.fillStyle(0x111111);
-      g.fillRect(1, 4, 14, 8);
+      g.fillRect(0, 4, 16, 8);
       g.fillStyle(0x222222);
-      g.fillRect(2, 5, 12, 6);
+      g.fillRect(1, 5, 14, 6);
       // Border
       g.fillStyle(0x888888);
-      g.fillRect(1, 4, 14, 1);
-      g.fillRect(1, 11, 14, 1);
-      g.fillRect(1, 4, 1, 8);
-      g.fillRect(14, 4, 1, 8);
-      // "SECRET" — pixel letters (S E C R E T)
+      g.fillRect(0, 4, 16, 1);
+      g.fillRect(0, 11, 16, 1);
+      g.fillRect(0, 4, 1, 8);
+      g.fillRect(15, 4, 1, 8);
+      // "SHHH" — pixel letters
       g.fillStyle(0xffffff);
       // S (x=2)
       g.fillRect(2, 6, 2, 1);
@@ -941,21 +941,18 @@ export default class BootScene extends Phaser.Scene {
       g.fillRect(2, 8, 2, 1);
       g.fillRect(3, 9, 1, 1);
       g.fillRect(2, 10, 2, 1);
-      // E (x=5)
-      g.fillRect(5, 6, 2, 1);
-      g.fillRect(5, 7, 1, 1);
-      g.fillRect(5, 8, 2, 1);
-      g.fillRect(5, 9, 1, 1);
-      g.fillRect(5, 10, 2, 1);
-      // C (x=8)
-      g.fillRect(8, 6, 2, 1);
-      g.fillRect(8, 7, 1, 1);
-      g.fillRect(8, 8, 1, 1);
-      g.fillRect(8, 9, 1, 1);
-      g.fillRect(8, 10, 2, 1);
-      // ! (x=11)
-      g.fillRect(11, 6, 1, 3);
-      g.fillRect(11, 10, 1, 1);
+      // H (x=5)
+      g.fillRect(5, 6, 1, 5);
+      g.fillRect(7, 6, 1, 5);
+      g.fillRect(6, 8, 1, 1);
+      // H (x=9)
+      g.fillRect(9, 6, 1, 5);
+      g.fillRect(11, 6, 1, 5);
+      g.fillRect(10, 8, 1, 1);
+      // H (x=13)
+      g.fillRect(13, 6, 1, 5);
+      g.fillRect(15, 6, 1, 5);
+      g.fillRect(14, 8, 1, 1);
     });
 
     // Secret garden door (teleport to secret room)
