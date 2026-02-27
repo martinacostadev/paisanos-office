@@ -917,27 +917,31 @@ export default class BootScene extends Phaser.Scene {
       g.fillRect(7, 0, 1, TILE);
     });
 
-    // Hole tile (teleport to secret room)
-    this.createTile('hole-tile', (g) => {
+    // Secret garden door (teleport to secret room)
+    this.createTile('secret-door', (g) => {
       // Garden base
       g.fillStyle(0x4a8c3f);
       g.fillRect(0, 0, TILE, TILE);
-      // Dark hole
-      g.fillStyle(0x0a0a0a);
-      g.fillRect(2, 2, 12, 12);
-      g.fillStyle(0x050510);
-      g.fillRect(3, 3, 10, 10);
-      // Gold glow border
+      // Door frame (stone arch)
+      g.fillStyle(0x666655);
+      g.fillRect(3, 1, 10, 14);
+      g.fillStyle(0x777766);
+      g.fillRect(4, 0, 8, 2);
+      // Wooden door
+      g.fillStyle(0x6b4226);
+      g.fillRect(4, 2, 8, 12);
+      g.fillStyle(0x7a5030);
+      g.fillRect(5, 3, 6, 10);
+      // Wood planks
+      g.fillStyle(0x6b4226);
+      g.fillRect(4, 6, 8, 1);
+      g.fillRect(4, 10, 8, 1);
+      // Handle
       g.fillStyle(0xf5a623);
-      g.fillRect(2, 2, 12, 1);
-      g.fillRect(2, 13, 12, 1);
-      g.fillRect(2, 2, 1, 12);
-      g.fillRect(13, 2, 1, 12);
-      // Sparkle
-      g.fillStyle(0xffdd44);
-      g.fillRect(5, 5, 1, 1);
-      g.fillRect(10, 8, 1, 1);
-      g.fillRect(7, 10, 1, 1);
+      g.fillRect(9, 7, 2, 2);
+      // Mysterious glow from gap under door
+      g.fillStyle(0x44dd66);
+      g.fillRect(5, 13, 6, 1);
     });
 
     // Money tile (dark floor with dollar bills)
@@ -1122,6 +1126,90 @@ export default class BootScene extends Phaser.Scene {
       // Handle
       g.fillStyle(0xcccccc);
       g.fillRect(10, 9, 2, 2);
+    });
+
+    // Gangster NPC (short hair, short beard, dark suit)
+    this.createTile('gangster-npc', (g) => {
+      // Shadow
+      g.fillStyle(0x000000, 0.2);
+      g.fillRect(4, 14, 8, 2);
+      // Legs (dark pants)
+      g.fillStyle(0x1a1a1a);
+      g.fillRect(5, 12, 3, 3);
+      g.fillRect(8, 12, 3, 3);
+      // Shoes
+      g.fillStyle(0x111111);
+      g.fillRect(5, 14, 2, 1);
+      g.fillRect(9, 14, 2, 1);
+      // Body (dark suit)
+      g.fillStyle(0x222222);
+      g.fillRect(5, 7, 6, 5);
+      // Arms
+      g.fillStyle(0x222222);
+      g.fillRect(3, 8, 2, 4);
+      g.fillRect(11, 8, 2, 4);
+      // Suit lapels
+      g.fillStyle(0x333333);
+      g.fillRect(6, 7, 1, 4);
+      g.fillRect(9, 7, 1, 4);
+      // Tie
+      g.fillStyle(0xcc0000);
+      g.fillRect(7, 7, 2, 3);
+      // Head (skin)
+      g.fillStyle(0xdeb887);
+      g.fillRect(5, 2, 6, 5);
+      // Short hair (dark, close-cut)
+      g.fillStyle(0x1a1a1a);
+      g.fillRect(5, 1, 6, 2);
+      g.fillRect(4, 2, 1, 2);
+      g.fillRect(11, 2, 1, 2);
+      // Eyes
+      g.fillStyle(0x000000);
+      g.fillRect(6, 4, 2, 1);
+      g.fillRect(9, 4, 2, 1);
+      // Short beard (stubble)
+      g.fillStyle(0x3a3a3a);
+      g.fillRect(6, 6, 4, 1);
+      g.fillRect(5, 5, 1, 2);
+      g.fillRect(10, 5, 1, 2);
+      // Gold chain
+      g.fillStyle(0xf5a623);
+      g.fillRect(6, 7, 4, 1);
+    });
+
+    // Money pile (big stacks for corners)
+    this.createTile('money-pile', (g) => {
+      // Dark floor base
+      g.fillStyle(0x1a1a2e);
+      g.fillRect(0, 0, TILE, TILE);
+      // Stack 1
+      g.fillStyle(0x2d8b2d);
+      g.fillRect(1, 2, 7, 4);
+      g.fillRect(1, 3, 7, 4);
+      g.fillStyle(0x3aaa3a);
+      g.fillRect(2, 3, 5, 2);
+      g.fillStyle(0xffffff);
+      g.fillRect(3, 3, 3, 2);
+      // Stack 2
+      g.fillStyle(0x2d8b2d);
+      g.fillRect(7, 7, 7, 4);
+      g.fillRect(8, 6, 6, 4);
+      g.fillStyle(0x3aaa3a);
+      g.fillRect(8, 7, 5, 2);
+      g.fillStyle(0xffffff);
+      g.fillRect(9, 7, 3, 2);
+      // Stack 3
+      g.fillStyle(0x2d8b2d);
+      g.fillRect(2, 10, 6, 4);
+      g.fillStyle(0x3aaa3a);
+      g.fillRect(3, 11, 4, 2);
+      g.fillStyle(0xffffff);
+      g.fillRect(4, 11, 2, 2);
+      // Loose bills
+      g.fillStyle(0x2d8b2d);
+      g.fillRect(12, 1, 3, 2);
+      g.fillRect(0, 13, 3, 2);
+      g.fillRect(11, 12, 4, 2);
     });
 
     // Big garden plant (large tropical)

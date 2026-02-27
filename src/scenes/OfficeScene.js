@@ -486,59 +486,45 @@ export default class OfficeScene extends Phaser.Scene {
     // --- Bathrooms (in extended area) ---
     this.buildBathrooms();
 
-    [1, 5, 10, 14].forEach((row) => {
-      this.placeSolid('pillar', 8, row);
-    });
+    this.placeSolid('pillar', 8, 1);
 
     [4, 12, 17, 22].forEach((col) => {
       this.add.image(col * TILE + TILE / 2, TILE / 2, 'ceiling-light').setDepth(0);
     });
 
-    // --- Big TV area ---
+    // --- Big TV area (moved down) ---
     // Big screen on wall (2 wide x 4 tall)
-    this.placeSolid('big-tv-tl', 1, 3);
-    this.placeSolid('big-tv-tr', 2, 3);
-    this.placeSolid('big-tv-ml', 1, 4);
-    this.placeSolid('big-tv-mr', 2, 4);
-    this.placeSolid('big-tv-ml', 1, 5);
-    this.placeSolid('big-tv-mr', 2, 5);
-    this.placeSolid('big-tv-bl', 1, 6);
-    this.placeSolid('big-tv-br', 2, 6);
+    this.placeSolid('big-tv-tl', 1, 7);
+    this.placeSolid('big-tv-tr', 2, 7);
+    this.placeSolid('big-tv-ml', 1, 8);
+    this.placeSolid('big-tv-mr', 2, 8);
+    this.placeSolid('big-tv-ml', 1, 9);
+    this.placeSolid('big-tv-mr', 2, 9);
+    this.placeSolid('big-tv-bl', 1, 10);
+    this.placeSolid('big-tv-br', 2, 10);
 
-    // Small table between TV and chairs
-    this.placeSolid('coffee-table', 3, 4);
-    this.placeSolid('coffee-table', 3, 5);
+    // Couch facing TV (to the right of TV)
+    this.placeSolid('couch-top', 4, 7);
+    this.placeSolid('couch-mid', 4, 8);
+    this.placeSolid('couch-mid', 4, 9);
+    this.placeSolid('couch-bottom', 4, 10);
 
-    // Chairs facing the TV
-    this.placeDecor('office-chair', 4, 3);
-    this.placeDecor('office-chair', 4, 4);
-    this.placeDecor('office-chair', 4, 5);
-    this.placeDecor('office-chair', 4, 6);
-
-    // --- Lounge area (below) ---
-    this.placeSolid('couch-top', 5, 8);
-    this.placeSolid('couch-mid', 5, 9);
-    this.placeSolid('couch-mid', 5, 10);
-    this.placeSolid('couch-bottom', 5, 11);
-
-    this.placeSolid('coffee-table', 3, 9);
+    this.placeSolid('coffee-table', 3, 8);
 
     this.placeSolid('plant', 7, 1);
     this.placeSolid('wall-shelf', 1, 1);
     this.placeSolid('wall-shelf', 1, 2);
     this.placeDecor('backpack', 7, 12);
 
-    this.placeBigVerticalDesk(10, 7);
-    this.placeBigVerticalDesk(15, 7);
-    this.placeBigVerticalDesk(20, 7);
+    this.placeBigVerticalDesk(10, 5);
+    this.placeBigVerticalDesk(15, 5);
+    this.placeBigVerticalDesk(20, 5);
 
     this.placeSolid('wall-shelf', 12, 1);
     this.placeSolid('wall-shelf', 13, 1);
     this.placeSolid('wall-shelf', 17, 1);
     this.placeSolid('wall-shelf', 18, 1);
     this.placeSolid('plant', 9, 1);
-    this.placeDecor('backpack', 13, 4);
-    this.placeDecor('backpack', 18, 3);
 
     for (let r = 1; r <= 4; r++) {
       this.placeSolid('kitchen-wall', 22, r);
@@ -572,20 +558,20 @@ export default class OfficeScene extends Phaser.Scene {
     this.placeSolid('big-plant', 30, 13);
 
     for (let c = 32; c <= 35; c++) {
-      this.placeSolid('pool-edge-h', c, 10);
+      this.placeSolid('pool-edge-h', c, 8);
     }
-    for (let r = 11; r <= 13; r++) {
+    for (let r = 9; r <= 11; r++) {
       for (let c = 32; c <= 35; c++) {
         this.placeSolid('pool-water', c, r);
       }
     }
     for (let c = 32; c <= 35; c++) {
-      this.placeSolid('pool-edge-h', c, 14);
+      this.placeSolid('pool-edge-h', c, 12);
     }
-    for (let r = 11; r <= 13; r++) {
+    for (let r = 9; r <= 11; r++) {
       this.placeSolid('pool-edge-v', 31, r);
     }
-    for (let r = 11; r <= 13; r++) {
+    for (let r = 9; r <= 11; r++) {
       this.placeSolid('pool-edge-v', 36, r);
     }
 
@@ -605,14 +591,14 @@ export default class OfficeScene extends Phaser.Scene {
 
     this.placeSolid('hammock', 40, 7);
 
-    // Secret garden hole (teleport trigger — walkable)
-    this.add.image(38 * TILE + TILE / 2, 8 * TILE + TILE / 2, 'hole-tile').setDepth(0);
+    // Secret garden door (teleport trigger — walkable, top-left of garden near door)
+    this.add.image(28 * TILE + TILE / 2, 5 * TILE + TILE / 2, 'secret-door').setDepth(5);
     // Don't mark as solid — it's walkable
 
     // Store teleport definitions: { fromCol, fromRow, toCol, toRow }
     this.teleports = [
-      // Garden hole -> Secret room entrance
-      { fromCol: 38, fromRow: 8, toCol: 10, toRow: 20 },
+      // Garden door -> Secret room entrance
+      { fromCol: 28, fromRow: 5, toCol: 10, toRow: 20 },
       // Secret room exit -> Garden
       { fromCol: 10, fromRow: 17, toCol: 38, toRow: 7 },
       { fromCol: 11, fromRow: 17, toCol: 38, toRow: 7 },
@@ -635,27 +621,72 @@ export default class OfficeScene extends Phaser.Scene {
     // Secret Room: cols 1-20, rows 17-30
     // Walls around perimeter
     for (let col = 1; col <= 20; col++) {
-      this.placeSolid('wall-dark', col, 17); // top wall (overwritten by return door below)
-      this.placeSolid('wall-dark', col, 30); // bottom wall
+      this.placeSolid('wall-dark', col, 17);
+      this.placeSolid('wall-dark', col, 30);
     }
     for (let row = 17; row <= 30; row++) {
       this.placeSolid('wall-dark', 1, row);
       this.placeSolid('wall-dark', 20, row);
     }
-    // Floor + money decorations
+
+    // Floor with LOTS of money — most tiles are money, with piles in corners
+    // Define corner/pile zones for big money stacks
+    const pilePositions = new Set();
+    // Top-left corner pile
+    for (let r = 18; r <= 20; r++)
+      for (let c = 2; c <= 5; c++) pilePositions.add(`${c},${r}`);
+    // Bottom-left corner pile
+    for (let r = 27; r <= 29; r++)
+      for (let c = 2; c <= 5; c++) pilePositions.add(`${c},${r}`);
+    // Bottom-right corner pile
+    for (let r = 27; r <= 29; r++)
+      for (let c = 16; c <= 19; c++) pilePositions.add(`${c},${r}`);
+    // Center pile
+    for (let r = 22; r <= 24; r++)
+      for (let c = 9; c <= 12; c++) pilePositions.add(`${c},${r}`);
+
     for (let row = 18; row <= 29; row++) {
       for (let col = 2; col <= 19; col++) {
-        const isMoney = (col + row) % 5 === 0;
-        const tileKey = isMoney ? 'money' : 'dark-floor';
+        let tileKey;
+        if (pilePositions.has(`${col},${row}`)) {
+          tileKey = 'money-pile';
+        } else if ((col + row) % 2 === 0) {
+          tileKey = 'money';
+        } else {
+          tileKey = 'dark-floor';
+        }
         this.add.image(col * TILE + TILE / 2, row * TILE + TILE / 2, tileKey);
         this.collisionMap[row][col] = WALKABLE;
       }
     }
+
     // Exit portal (return to garden) at row 17
     this.add.image(10 * TILE + TILE / 2, 17 * TILE + TILE / 2, 'exit-portal').setDepth(17);
     this.collisionMap[17][10] = WALKABLE;
     this.add.image(11 * TILE + TILE / 2, 17 * TILE + TILE / 2, 'exit-portal').setDepth(17);
     this.collisionMap[17][11] = WALKABLE;
+
+    // Gangster NPC — top-right corner, always standing
+    const gangsterCol = 18;
+    const gangsterRow = 18;
+    const gangster = this.add.sprite(
+      gangsterCol * TILE + TILE / 2,
+      gangsterRow * TILE + TILE / 2,
+      'gangster-npc'
+    );
+    gangster.setDepth(gangsterRow + 0.5);
+    this.collisionMap[gangsterRow][gangsterCol] = SOLID;
+    // Name label for gangster
+    const container = this._getOverlayContainer();
+    const gangsterLabel = document.createElement('div');
+    gangsterLabel.textContent = 'Gangster';
+    gangsterLabel.style.cssText = 'position:absolute;transform:translate(-50%,-100%);font:bold 11px Arial,sans-serif;color:#f5a623;text-shadow:0 0 3px #000,0 0 3px #000;white-space:nowrap;pointer-events:none;';
+    container.appendChild(gangsterLabel);
+    // Store reference so label gets positioned
+    gangster.setData('nameEl', gangsterLabel);
+    gangster.setData('gridX', gangsterCol);
+    gangster.setData('gridY', gangsterRow);
+    this.gangsterSprite = gangster;
   }
 
   buildBathrooms() {
@@ -878,6 +909,9 @@ export default class OfficeScene extends Phaser.Scene {
     // Always update DOM overlay positions (camera may have moved)
     for (const [, sprite] of this.players) {
       this._updateSpriteLabels(sprite);
+    }
+    if (this.gangsterSprite) {
+      this._updateSpriteLabels(this.gangsterSprite);
     }
 
     const localSprite = this.players.get(this.localId);
