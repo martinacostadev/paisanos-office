@@ -859,12 +859,25 @@ export default class OfficeScene extends Phaser.Scene {
     dpadMap.forEach(({ id, dx, dy }) => {
       const btn = document.getElementById(id);
       if (!btn) return;
-      const start = (e) => { e.preventDefault(); this.dpadDir = { dx, dy }; btn.classList.add('pressed'); };
-      const stop = (e) => { e.preventDefault(); this.dpadDir = { dx: 0, dy: 0 }; btn.classList.remove('pressed'); };
-      btn.addEventListener('pointerdown', start);
-      btn.addEventListener('pointerup', stop);
-      btn.addEventListener('pointerleave', stop);
-      btn.addEventListener('pointercancel', stop);
+      const start = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.dpadDir = { dx, dy };
+        btn.classList.add('pressed');
+      };
+      const stop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.dpadDir = { dx: 0, dy: 0 };
+        btn.classList.remove('pressed');
+      };
+      btn.addEventListener('pointerdown', start, { passive: false });
+      btn.addEventListener('pointerup', stop, { passive: false });
+      btn.addEventListener('pointerleave', stop, { passive: false });
+      btn.addEventListener('pointercancel', stop, { passive: false });
+      // Touch fallback for mobile
+      btn.addEventListener('touchstart', start, { passive: false });
+      btn.addEventListener('touchend', stop, { passive: false });
     });
 
     this.input.on('pointerdown', (pointer) => {
