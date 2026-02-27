@@ -279,7 +279,7 @@ export default class OfficeScene extends Phaser.Scene {
       if (!container) {
         container = document.createElement('div');
         container.id = 'game-overlay';
-        container.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:hidden;';
+        container.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;';
         gameCanvas.parentElement.style.position = 'relative';
         gameCanvas.parentElement.appendChild(container);
       }
@@ -290,18 +290,14 @@ export default class OfficeScene extends Phaser.Scene {
 
   _worldToScreen(worldX, worldY) {
     const cam = this.cameras.main;
-    const configZoom = this.sys.game.config.zoom;
-    const totalZoom = cam.zoom * configZoom;
-    let sx = (worldX - cam.scrollX) * totalZoom;
-    let sy = (worldY - cam.scrollY) * totalZoom;
-
-    // Account for CSS scaling (mobile fullscreen stretches the canvas)
     const canvas = this.sys.game.canvas;
-    const cssScaleX = canvas.clientWidth / canvas.width;
-    const cssScaleY = canvas.clientHeight / canvas.height;
-    sx *= cssScaleX;
-    sy *= cssScaleY;
-
+    // Map world coords to actual displayed pixel coords
+    // canvas.clientWidth/Height = actual CSS size on screen
+    // canvas.width/height = Phaser internal resolution (before zoom)
+    const scaleX = canvas.clientWidth / canvas.width;
+    const scaleY = canvas.clientHeight / canvas.height;
+    const sx = (worldX - cam.scrollX) * scaleX;
+    const sy = (worldY - cam.scrollY) * scaleY;
     return { x: sx, y: sy };
   }
 
