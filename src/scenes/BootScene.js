@@ -1128,6 +1128,62 @@ export default class BootScene extends Phaser.Scene {
       g.fillRect(10, 9, 2, 2);
     });
 
+    // Game console (white rectangle)
+    this.createTile('game-console', (g) => {
+      // Floor
+      g.fillStyle(0x8a8078);
+      g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0x7d756d);
+      g.fillRect(0, 0, TILE, 1);
+      // White console box
+      g.fillStyle(0xeeeeee);
+      g.fillRect(3, 5, 10, 6);
+      g.fillStyle(0xffffff);
+      g.fillRect(4, 6, 8, 4);
+      // Disc slot
+      g.fillStyle(0xcccccc);
+      g.fillRect(5, 7, 6, 1);
+      // Power button
+      g.fillStyle(0x44dd44);
+      g.fillRect(9, 9, 2, 1);
+      // USB ports
+      g.fillStyle(0x333333);
+      g.fillRect(5, 9, 1, 1);
+      g.fillRect(7, 9, 1, 1);
+    });
+
+    // Joystick controller
+    this.createTile('joystick', (g) => {
+      // Floor
+      g.fillStyle(0x8a8078);
+      g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0x7d756d);
+      g.fillRect(0, 0, TILE, 1);
+      // Controller body
+      g.fillStyle(0x333333);
+      g.fillRect(2, 5, 12, 7);
+      g.fillStyle(0x444444);
+      g.fillRect(3, 6, 10, 5);
+      // Left stick
+      g.fillStyle(0x666666);
+      g.fillRect(4, 7, 3, 3);
+      g.fillStyle(0x888888);
+      g.fillRect(5, 8, 1, 1);
+      // Right buttons (colored)
+      g.fillStyle(0x4488ff);
+      g.fillRect(10, 7, 2, 1);
+      g.fillStyle(0xff4444);
+      g.fillRect(10, 9, 2, 1);
+      g.fillStyle(0x44dd44);
+      g.fillRect(9, 8, 1, 1);
+      g.fillStyle(0xffdd44);
+      g.fillRect(12, 8, 1, 1);
+      // Handles
+      g.fillStyle(0x333333);
+      g.fillRect(1, 8, 2, 4);
+      g.fillRect(13, 8, 2, 4);
+    });
+
     // Gangster NPC (short hair, short beard, dark suit)
     this.createTile('gangster-npc', (g) => {
       // Shadow

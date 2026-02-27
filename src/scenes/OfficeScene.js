@@ -503,22 +503,28 @@ export default class OfficeScene extends Phaser.Scene {
     this.placeSolid('big-tv-bl', 1, 10);
     this.placeSolid('big-tv-br', 2, 10);
 
-    // Couch facing TV (to the right of TV)
-    this.placeSolid('couch-top', 4, 7);
-    this.placeSolid('couch-mid', 4, 8);
-    this.placeSolid('couch-mid', 4, 9);
-    this.placeSolid('couch-bottom', 4, 10);
+    // Game console and joysticks below TV
+    this.placeDecor('game-console', 1, 11);
+    this.placeDecor('joystick', 2, 11);
+    this.placeDecor('joystick', 3, 11);
 
+    // Coffee table next to TV
     this.placeSolid('coffee-table', 3, 8);
+
+    // Couch facing TV (separated with gap)
+    this.placeSolid('couch-top', 5, 7);
+    this.placeSolid('couch-mid', 5, 8);
+    this.placeSolid('couch-mid', 5, 9);
+    this.placeSolid('couch-bottom', 5, 10);
 
     this.placeSolid('plant', 7, 1);
     this.placeSolid('wall-shelf', 1, 1);
     this.placeSolid('wall-shelf', 1, 2);
     this.placeDecor('backpack', 7, 12);
 
-    this.placeBigVerticalDesk(10, 5);
-    this.placeBigVerticalDesk(15, 5);
-    this.placeBigVerticalDesk(20, 5);
+    this.placeBigVerticalDesk(10, 8);
+    this.placeBigVerticalDesk(15, 8);
+    this.placeBigVerticalDesk(20, 8);
 
     this.placeSolid('wall-shelf', 12, 1);
     this.placeSolid('wall-shelf', 13, 1);
@@ -598,10 +604,9 @@ export default class OfficeScene extends Phaser.Scene {
     // Store teleport definitions: { fromCol, fromRow, toCol, toRow }
     this.teleports = [
       // Garden door -> Secret room entrance
-      { fromCol: 28, fromRow: 5, toCol: 10, toRow: 20 },
+      { fromCol: 28, fromRow: 5, toCol: 10, toRow: 19 },
       // Secret room exit -> Garden
-      { fromCol: 10, fromRow: 17, toCol: 38, toRow: 7 },
-      { fromCol: 11, fromRow: 17, toCol: 38, toRow: 7 },
+      { fromCol: 10, fromRow: 17, toCol: 28, toRow: 6 },
       // Women's bathroom door (top wall) -> Women's bathroom
       { fromCol: 14, fromRow: 0, toCol: 24, toRow: 22 },
       { fromCol: 15, fromRow: 0, toCol: 25, toRow: 22 },
@@ -618,56 +623,34 @@ export default class OfficeScene extends Phaser.Scene {
   }
 
   buildSecretRoom() {
-    // Secret Room: cols 1-20, rows 17-30
+    // Secret Room: 4x4 interior, cols 8-13, rows 17-22
     // Walls around perimeter
-    for (let col = 1; col <= 20; col++) {
+    for (let col = 8; col <= 13; col++) {
       this.placeSolid('wall-dark', col, 17);
-      this.placeSolid('wall-dark', col, 30);
+      this.placeSolid('wall-dark', col, 22);
     }
-    for (let row = 17; row <= 30; row++) {
-      this.placeSolid('wall-dark', 1, row);
-      this.placeSolid('wall-dark', 20, row);
+    for (let row = 17; row <= 22; row++) {
+      this.placeSolid('wall-dark', 8, row);
+      this.placeSolid('wall-dark', 13, row);
     }
 
-    // Floor with LOTS of money — most tiles are money, with piles in corners
-    // Define corner/pile zones for big money stacks
-    const pilePositions = new Set();
-    // Top-left corner pile
-    for (let r = 18; r <= 20; r++)
-      for (let c = 2; c <= 5; c++) pilePositions.add(`${c},${r}`);
-    // Bottom-left corner pile
-    for (let r = 27; r <= 29; r++)
-      for (let c = 2; c <= 5; c++) pilePositions.add(`${c},${r}`);
-    // Bottom-right corner pile
-    for (let r = 27; r <= 29; r++)
-      for (let c = 16; c <= 19; c++) pilePositions.add(`${c},${r}`);
-    // Center pile
-    for (let r = 22; r <= 24; r++)
-      for (let c = 9; c <= 12; c++) pilePositions.add(`${c},${r}`);
-
-    for (let row = 18; row <= 29; row++) {
-      for (let col = 2; col <= 19; col++) {
-        let tileKey;
-        if (pilePositions.has(`${col},${row}`)) {
-          tileKey = 'money-pile';
-        } else if ((col + row) % 2 === 0) {
-          tileKey = 'money';
-        } else {
-          tileKey = 'dark-floor';
-        }
+    // 4x4 interior (cols 9-12, rows 18-21) — dense money everywhere
+    for (let row = 18; row <= 21; row++) {
+      for (let col = 9; col <= 12; col++) {
+        // Corners get money piles, rest alternates money/dark-floor
+        const isCorner = (row === 18 || row === 21) && (col === 9 || col === 12);
+        const tileKey = isCorner ? 'money-pile' : 'money';
         this.add.image(col * TILE + TILE / 2, row * TILE + TILE / 2, tileKey);
         this.collisionMap[row][col] = WALKABLE;
       }
     }
 
-    // Exit portal (return to garden) at row 17
+    // Exit portal at top wall
     this.add.image(10 * TILE + TILE / 2, 17 * TILE + TILE / 2, 'exit-portal').setDepth(17);
     this.collisionMap[17][10] = WALKABLE;
-    this.add.image(11 * TILE + TILE / 2, 17 * TILE + TILE / 2, 'exit-portal').setDepth(17);
-    this.collisionMap[17][11] = WALKABLE;
 
-    // Gangster NPC — top-right corner, always standing
-    const gangsterCol = 18;
+    // Gangster NPC — top-right corner
+    const gangsterCol = 12;
     const gangsterRow = 18;
     const gangster = this.add.sprite(
       gangsterCol * TILE + TILE / 2,
@@ -682,7 +665,6 @@ export default class OfficeScene extends Phaser.Scene {
     gangsterLabel.textContent = 'Gangster';
     gangsterLabel.style.cssText = 'position:absolute;transform:translate(-50%,-100%);font:bold 11px Arial,sans-serif;color:#f5a623;text-shadow:0 0 3px #000,0 0 3px #000;white-space:nowrap;pointer-events:none;';
     container.appendChild(gangsterLabel);
-    // Store reference so label gets positioned
     gangster.setData('nameEl', gangsterLabel);
     gangster.setData('gridX', gangsterCol);
     gangster.setData('gridY', gangsterRow);
