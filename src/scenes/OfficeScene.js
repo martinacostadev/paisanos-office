@@ -1289,17 +1289,25 @@ export default class OfficeScene extends Phaser.Scene {
 
   setupBots() {
     const botPhrases = [
-      'Trabajando en la propuesta de valor',
-      'Desplegando a producción',
-      'Haciendo propuesto comercial',
-      'Crendo proyecto en v0',
-      'Modificando los assets de Figma',
-      'Haciendo fixes en ambiente Staging',
+      'Trabajando en la propuesta de valor...',
+      'Desplegando a producción...',
+      'Haciendo propuesto comercial...',
+      'Crendo proyecto en v0...',
+      'Modificando los assets de Figma...',
+      'Haciendo fixes en ambiente Staging...',
+    ];
+
+    const chefPhrases = [
+      '\u00BFQuer\u00E9s algo de comer?',
+      '\u00BFTe gustar\u00EDa una picada con fernet?',
+      '\u00BFQui\u00E9n quiere chipa?',
+      'Hola! Quer\u00E9s algo dulce o salado?',
     ];
 
     const bots = [
-      { name: 'Dani La Muerte', texture: 'bot-dani', col: 9, row: 9 },
-      { name: 'PaisaBot', texture: 'bot-paisabot', col: 12, row: 11 },
+      { name: 'Dani La Muerte', texture: 'bot-dani', col: 9, row: 9, phrases: botPhrases, nameColor: '#00ff88' },
+      { name: 'PaisaBot', texture: 'bot-paisabot', col: 12, row: 11, phrases: botPhrases, nameColor: '#00ff88' },
+      { name: 'Chef Paisano', texture: 'chef-npc', col: 24, row: 2, phrases: chefPhrases, nameColor: '#ffcc44' },
     ];
 
     this.botSprites = [];
@@ -1311,12 +1319,13 @@ export default class OfficeScene extends Phaser.Scene {
         bot.texture
       );
       sprite.setDepth(bot.row + 0.5);
+      this.collisionMap[bot.row][bot.col] = SOLID;
 
       // Name label
       const container = this._getOverlayContainer();
       const nameEl = document.createElement('div');
       nameEl.textContent = bot.name;
-      nameEl.style.cssText = 'position:absolute;transform:translate(-50%,-100%);font:bold 11px Arial,sans-serif;color:#00ff88;text-shadow:0 0 3px #000,0 0 3px #000;white-space:nowrap;pointer-events:none;';
+      nameEl.style.cssText = `position:absolute;transform:translate(-50%,-100%);font:bold 11px Arial,sans-serif;color:${bot.nameColor};text-shadow:0 0 3px #000,0 0 3px #000;white-space:nowrap;pointer-events:none;`;
       container.appendChild(nameEl);
       sprite.setData('nameEl', nameEl);
       sprite.setData('gridX', bot.col);
@@ -1325,8 +1334,9 @@ export default class OfficeScene extends Phaser.Scene {
       this.botSprites.push(sprite);
 
       // Random chat messages at random intervals
+      const phrases = bot.phrases;
       const sendBotMessage = () => {
-        const msg = botPhrases[Math.floor(Math.random() * botPhrases.length)];
+        const msg = phrases[Math.floor(Math.random() * phrases.length)];
         // Show speech bubble above bot
         this._showBotSpeechBubble(sprite, msg);
         // Add to chat panel

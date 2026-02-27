@@ -1233,6 +1233,53 @@ export default class BootScene extends Phaser.Scene {
       g.fillRect(6, 7, 4, 1);
     });
 
+    // Chef NPC (white chef hat, apron)
+    this.createTile('chef-npc', (g) => {
+      // Shadow
+      g.fillStyle(0x000000, 0.2);
+      g.fillRect(4, 14, 8, 2);
+      // Legs (black pants)
+      g.fillStyle(0x222222);
+      g.fillRect(5, 12, 3, 3);
+      g.fillRect(8, 12, 3, 3);
+      // Shoes
+      g.fillStyle(0x111111);
+      g.fillRect(5, 14, 2, 1);
+      g.fillRect(9, 14, 2, 1);
+      // Body (white apron over dark shirt)
+      g.fillStyle(0x333333);
+      g.fillRect(5, 7, 6, 5);
+      // White apron
+      g.fillStyle(0xffffff);
+      g.fillRect(6, 8, 4, 4);
+      g.fillStyle(0xeeeeee);
+      g.fillRect(6, 8, 4, 1);
+      // Arms (dark sleeves)
+      g.fillStyle(0x333333);
+      g.fillRect(3, 8, 2, 4);
+      g.fillRect(11, 8, 2, 4);
+      // Head (skin)
+      g.fillStyle(0xf0b88a);
+      g.fillRect(5, 3, 6, 4);
+      // Chef hat (tall white toque)
+      g.fillStyle(0xffffff);
+      g.fillRect(5, 0, 6, 4);
+      g.fillRect(4, 1, 8, 3);
+      // Hat puff top
+      g.fillStyle(0xeeeeee);
+      g.fillRect(6, 0, 4, 2);
+      // Eyes
+      g.fillStyle(0x000000);
+      g.fillRect(6, 4, 2, 1);
+      g.fillRect(9, 4, 2, 1);
+      // Mustache
+      g.fillStyle(0x3b2417);
+      g.fillRect(6, 6, 4, 1);
+      // Mouth
+      g.fillStyle(0xcc6666);
+      g.fillRect(7, 6, 2, 1);
+    });
+
     // Bot NPC 1 — Dani La Muerte (dark metallic robot, red eyes)
     this.createTile('bot-dani', (g) => {
       // Shadow
