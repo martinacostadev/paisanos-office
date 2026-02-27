@@ -13,11 +13,9 @@ export function drawWorker(g, color, frame) {
 
   // Shirt design overlay
   if (color.shirtStyle === 'blue-lines') {
-    // Boquita: multiple yellow horizontal lines across full shirt width
+    // Boquita: wide yellow horizontal band across the entire shirt
     g.fillStyle(0xf5a623);
-    g.fillRect(5, 7 + bounce, 6, 1);  // line 1 (top)
-    g.fillRect(5, 9 + bounce, 6, 1);  // line 2 (middle)
-    g.fillRect(5, 11 + bounce, 6, 1); // line 3 (bottom)
+    g.fillRect(3, 9 + bounce, 10, 3); // thick band covering body + arms
   } else if (color.shirtStyle === 'white-v') {
     // Velez: huge V from top corners to bottom center
     g.fillStyle(0x4488cc);
