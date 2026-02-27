@@ -630,8 +630,8 @@ export default class OfficeScene extends Phaser.Scene {
     this.placeSolid('kitchen-counter', 26, 3);
     this.placeSolid('coffee', 26, 4);
 
-    this.placeSolid('coffee-table', 22, 3);
-    this.placeSolid('coffee-table', 24, 3);
+    this.placeSolid('coffee-table', 21, 3);
+    this.placeSolid('coffee-table', 21, 4);
 
     for (let c = 28; c <= 31; c++) {
       this.add.image(c * TILE + TILE / 2, 7 * TILE + TILE / 2, 'garden-path');
@@ -679,6 +679,9 @@ export default class OfficeScene extends Phaser.Scene {
     this.placeSolid('flower2', 39, 3);
 
     this.placeSolid('hammock', 40, 7);
+
+    // "SECRET" sign above the door
+    this.placeSolid('secret-sign', 28, 4);
 
     // Secret garden door (teleport trigger — walkable, top-left of garden near door)
     this.add.image(28 * TILE + TILE / 2, 5 * TILE + TILE / 2, 'secret-door').setDepth(5);

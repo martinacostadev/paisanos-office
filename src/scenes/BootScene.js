@@ -917,6 +917,47 @@ export default class BootScene extends Phaser.Scene {
       g.fillRect(7, 0, 1, TILE);
     });
 
+    // Secret sign (black board with white "SECRET" text)
+    this.createTile('secret-sign', (g) => {
+      // Garden base
+      g.fillStyle(0x4a8c3f);
+      g.fillRect(0, 0, TILE, TILE);
+      // Black sign board
+      g.fillStyle(0x111111);
+      g.fillRect(1, 4, 14, 8);
+      g.fillStyle(0x222222);
+      g.fillRect(2, 5, 12, 6);
+      // Border
+      g.fillStyle(0x888888);
+      g.fillRect(1, 4, 14, 1);
+      g.fillRect(1, 11, 14, 1);
+      g.fillRect(1, 4, 1, 8);
+      g.fillRect(14, 4, 1, 8);
+      // "SECRET" — pixel letters (S E C R E T)
+      g.fillStyle(0xffffff);
+      // S (x=2)
+      g.fillRect(2, 6, 2, 1);
+      g.fillRect(2, 7, 1, 1);
+      g.fillRect(2, 8, 2, 1);
+      g.fillRect(3, 9, 1, 1);
+      g.fillRect(2, 10, 2, 1);
+      // E (x=5)
+      g.fillRect(5, 6, 2, 1);
+      g.fillRect(5, 7, 1, 1);
+      g.fillRect(5, 8, 2, 1);
+      g.fillRect(5, 9, 1, 1);
+      g.fillRect(5, 10, 2, 1);
+      // C (x=8)
+      g.fillRect(8, 6, 2, 1);
+      g.fillRect(8, 7, 1, 1);
+      g.fillRect(8, 8, 1, 1);
+      g.fillRect(8, 9, 1, 1);
+      g.fillRect(8, 10, 2, 1);
+      // ! (x=11)
+      g.fillRect(11, 6, 1, 3);
+      g.fillRect(11, 10, 1, 1);
+    });
+
     // Secret garden door (teleport to secret room)
     this.createTile('secret-door', (g) => {
       // Garden base
