@@ -30,11 +30,13 @@ export default class JoinScene extends Phaser.Scene {
     // Shirt picker
     let selectedShirt = 'blue-lines';
     const shirtOptions = document.querySelectorAll('.shirt-option');
+    const shirtLabel = document.getElementById('shirt-label');
     shirtOptions.forEach((opt) => {
       opt.addEventListener('click', () => {
         shirtOptions.forEach((o) => o.classList.remove('selected'));
         opt.classList.add('selected');
         selectedShirt = opt.dataset.shirt;
+        if (shirtLabel) shirtLabel.textContent = opt.dataset.title || '';
       });
     });
 
@@ -44,7 +46,9 @@ export default class JoinScene extends Phaser.Scene {
       if (saved && saved.shirtStyle) {
         selectedShirt = saved.shirtStyle;
         shirtOptions.forEach((o) => {
-          o.classList.toggle('selected', o.dataset.shirt === selectedShirt);
+          const match = o.dataset.shirt === selectedShirt;
+          o.classList.toggle('selected', match);
+          if (match && shirtLabel) shirtLabel.textContent = o.dataset.title || '';
         });
       }
     } catch (e) { /* ignore */ }

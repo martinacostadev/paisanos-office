@@ -13,20 +13,34 @@ export function drawWorker(g, color, frame) {
 
   // Shirt design overlay
   if (color.shirtStyle === 'blue-lines') {
-    g.fillStyle(0xffffff);
-    g.fillRect(5, 9 + bounce, 6, 1);
-    g.fillRect(5, 11 + bounce, 6, 1);
+    // Boquita: one big yellow horizontal line across the middle
+    g.fillStyle(0xf5a623);
+    g.fillRect(5, 9 + bounce, 6, 2);
   } else if (color.shirtStyle === 'white-v') {
+    // Velez: BIG V crossing almost the entire shirt
     g.fillStyle(0x4488cc);
-    g.fillRect(5, 7 + bounce, 1, 1);
-    g.fillRect(6, 8 + bounce, 1, 1);
-    g.fillRect(7, 9 + bounce, 2, 1);
-    g.fillRect(9, 8 + bounce, 1, 1);
-    g.fillRect(10, 7 + bounce, 1, 1);
+    // Left arm of V
+    g.fillRect(5, 7 + bounce, 2, 1);
+    g.fillRect(5, 8 + bounce, 2, 1);
+    g.fillRect(6, 9 + bounce, 2, 1);
+    g.fillRect(7, 10 + bounce, 2, 1);
+    // Right arm of V
+    g.fillRect(9, 7 + bounce, 2, 1);
+    g.fillRect(9, 8 + bounce, 2, 1);
+    g.fillRect(8, 9 + bounce, 2, 1);
+    // Bottom point merges at center
+    g.fillRect(7, 11 + bounce, 2, 1);
   } else if (color.shirtStyle === 'black-logo') {
+    // Dark: white cross/star design on chest
     g.fillStyle(0xffffff);
     g.fillRect(7, 8 + bounce, 2, 3);
     g.fillRect(6, 9 + bounce, 4, 1);
+    // Extra details
+    g.fillStyle(0xcccccc);
+    g.fillRect(6, 8 + bounce, 1, 1);
+    g.fillRect(9, 8 + bounce, 1, 1);
+    g.fillRect(6, 10 + bounce, 1, 1);
+    g.fillRect(9, 10 + bounce, 1, 1);
   }
 
   // Arms
