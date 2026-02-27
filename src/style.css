@@ -242,6 +242,36 @@ body {
   transform: none;
 }
 
+/* === Settings Button (top-right) === */
+#settings-btn {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 9998;
+  font-size: 22px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: rgba(26, 26, 46, 0.7);
+  border: 2px solid #555;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.2s, background 0.2s;
+}
+
+#settings-btn:hover {
+  border-color: #f5a623;
+  background: rgba(26, 26, 46, 0.9);
+  transform: rotate(45deg);
+}
+
+#settings-btn.settings-btn-hidden {
+  display: none;
+}
+
 /* === Camera Panel (top-left) === */
 #cam-toggle-btn {
   position: fixed;

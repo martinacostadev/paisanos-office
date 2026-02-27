@@ -1233,6 +1233,90 @@ export default class BootScene extends Phaser.Scene {
       g.fillRect(6, 7, 4, 1);
     });
 
+    // Bot NPC 1 — Dani La Muerte (dark metallic robot, red eyes)
+    this.createTile('bot-dani', (g) => {
+      // Shadow
+      g.fillStyle(0x000000, 0.2);
+      g.fillRect(4, 14, 8, 2);
+      // Legs (metallic)
+      g.fillStyle(0x555555);
+      g.fillRect(5, 12, 3, 3);
+      g.fillRect(8, 12, 3, 3);
+      // Shoes
+      g.fillStyle(0x333333);
+      g.fillRect(5, 14, 2, 1);
+      g.fillRect(9, 14, 2, 1);
+      // Body (dark metal)
+      g.fillStyle(0x444444);
+      g.fillRect(5, 7, 6, 5);
+      // Chest panel (glowing)
+      g.fillStyle(0x00ff88);
+      g.fillRect(7, 8, 2, 2);
+      g.fillStyle(0x00cc66);
+      g.fillRect(6, 9, 4, 1);
+      // Arms (metal)
+      g.fillStyle(0x555555);
+      g.fillRect(3, 8, 2, 4);
+      g.fillRect(11, 8, 2, 4);
+      // Head (robot — boxy, dark)
+      g.fillStyle(0x666666);
+      g.fillRect(5, 2, 6, 5);
+      g.fillStyle(0x555555);
+      g.fillRect(5, 1, 6, 2);
+      // Antenna
+      g.fillStyle(0xff0000);
+      g.fillRect(7, 0, 2, 2);
+      // Eyes (red glowing)
+      g.fillStyle(0xff0000);
+      g.fillRect(6, 4, 2, 1);
+      g.fillRect(9, 4, 2, 1);
+      // Mouth (LED grid)
+      g.fillStyle(0x00ff88);
+      g.fillRect(7, 6, 2, 1);
+    });
+
+    // Bot NPC 2 — PaisaBot (white/silver friendly robot, blue eyes)
+    this.createTile('bot-paisabot', (g) => {
+      // Shadow
+      g.fillStyle(0x000000, 0.2);
+      g.fillRect(4, 14, 8, 2);
+      // Legs
+      g.fillStyle(0xaaaaaa);
+      g.fillRect(5, 12, 3, 3);
+      g.fillRect(8, 12, 3, 3);
+      // Shoes
+      g.fillStyle(0x888888);
+      g.fillRect(5, 14, 2, 1);
+      g.fillRect(9, 14, 2, 1);
+      // Body (white/silver)
+      g.fillStyle(0xdddddd);
+      g.fillRect(5, 7, 6, 5);
+      // Paisanos logo on chest
+      g.fillStyle(0xf5a623);
+      g.fillRect(6, 8, 4, 1);
+      g.fillStyle(0xf5a623);
+      g.fillRect(7, 9, 2, 2);
+      // Arms
+      g.fillStyle(0xcccccc);
+      g.fillRect(3, 8, 2, 4);
+      g.fillRect(11, 8, 2, 4);
+      // Head (round-ish robot)
+      g.fillStyle(0xeeeeee);
+      g.fillRect(5, 2, 6, 5);
+      g.fillStyle(0xdddddd);
+      g.fillRect(5, 1, 6, 2);
+      // Antenna
+      g.fillStyle(0x4488ff);
+      g.fillRect(7, 0, 2, 2);
+      // Eyes (blue friendly)
+      g.fillStyle(0x4488ff);
+      g.fillRect(6, 4, 2, 1);
+      g.fillRect(9, 4, 2, 1);
+      // Smile
+      g.fillStyle(0x4488ff);
+      g.fillRect(7, 6, 2, 1);
+    });
+
     // Money pile (big stacks for corners)
     this.createTile('money-pile', (g) => {
       // Dark floor base

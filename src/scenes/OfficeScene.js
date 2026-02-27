@@ -103,8 +103,14 @@ export default class OfficeScene extends Phaser.Scene {
     this.time.delayedCall(1000, () => this._requestSync());
     this.time.delayedCall(3000, () => this._requestSync());
 
+    // Settings button
+    this.setupSettings();
+
     // Chat setup
     this.setupChat();
+
+    // Place bot NPCs
+    this.setupBots();
 
     // Idle animation
     this.time.addEvent({
@@ -179,6 +185,68 @@ export default class OfficeScene extends Phaser.Scene {
         micBtn.textContent = 'Open mic';
         micBtn.classList.remove('mic-on');
       }
+    });
+  }
+
+  setupSettings() {
+    const settingsBtn = document.getElementById('settings-btn');
+    settingsBtn.classList.remove('settings-btn-hidden');
+
+    settingsBtn.addEventListener('click', () => {
+      const form = document.getElementById('join-form-overlay');
+      const joinBtn = document.getElementById('join-btn');
+      joinBtn.disabled = false;
+      joinBtn.textContent = 'SAVE';
+      form.classList.remove('form-hidden');
+
+      // Replace the JOIN button behavior with SAVE behavior
+      const saveHandler = () => {
+        const name = document.getElementById('join-name').value.trim();
+        const position = document.getElementById('join-position').value.trim();
+        const years = document.getElementById('join-years').value.trim();
+        if (!name || !position || !years) return;
+
+        // Read selected shirt
+        let shirtStyle = 'blue-lines';
+        const shirtOpts = document.querySelectorAll('.shirt-option');
+        shirtOpts.forEach((o) => { if (o.classList.contains('selected')) shirtStyle = o.dataset.shirt; });
+
+        // Read selected hair style
+        let hairStyle = 'short';
+        const hairOpts = document.querySelectorAll('.hair-option');
+        hairOpts.forEach((o) => { if (o.classList.contains('selected')) hairStyle = o.dataset.hair; });
+
+        // Read selected hair color
+        let hairColor = '0x3b2417';
+        const colorOpts = document.querySelectorAll('.hair-color-option');
+        colorOpts.forEach((o) => { if (o.classList.contains('selected')) hairColor = o.dataset.haircolor; });
+
+        // Save to localStorage
+        try {
+          localStorage.setItem('paisanos_user', JSON.stringify({ name, position, years, shirtStyle, hairStyle, hairColor }));
+        } catch (e) { /* ignore */ }
+
+        form.classList.add('form-hidden');
+
+        // Disconnect and rejoin with new data
+        socketManager.socket.disconnect();
+        socketManager.connect();
+        socketManager.on('game:state', (state) => {
+          this.registry.set('myId', state.you.id);
+          this.registry.set('players', state.players);
+          // Clean up old overlays
+          const overlay = document.getElementById('game-overlay');
+          if (overlay) overlay.innerHTML = '';
+          this._overlayContainer = null;
+          this.scene.restart();
+        });
+        socketManager.join({ name, position, years, shirtStyle, hairStyle, hairColor });
+
+        // Remove this handler to avoid duplication
+        joinBtn.removeEventListener('click', saveHandler);
+      };
+
+      joinBtn.addEventListener('click', saveHandler);
     });
   }
 
@@ -924,6 +992,9 @@ export default class OfficeScene extends Phaser.Scene {
     if (this.gangsterSprite) {
       this._updateSpriteLabels(this.gangsterSprite);
     }
+    if (this.botSprites) {
+      this.botSprites.forEach((bot) => this._updateSpriteLabels(bot));
+    }
 
     const localSprite = this.players.get(this.localId);
     if (!localSprite) return;
@@ -1214,6 +1285,90 @@ export default class OfficeScene extends Phaser.Scene {
     if (el) { el.remove(); sprite.setData('speechEl', null); }
     const timer = sprite.getData('speechTimer');
     if (timer) { timer.remove(); sprite.setData('speechTimer', null); }
+  }
+
+  setupBots() {
+    const botPhrases = [
+      'Trabajando en la propuesta de valor',
+      'Desplegando a producción',
+      'Haciendo propuesto comercial',
+      'Crendo proyecto en v0',
+      'Modificando los assets de Figma',
+      'Haciendo fixes en ambiente Staging',
+    ];
+
+    const bots = [
+      { name: 'Dani La Muerte', texture: 'bot-dani', col: 9, row: 9 },
+      { name: 'PaisaBot', texture: 'bot-paisabot', col: 12, row: 11 },
+    ];
+
+    this.botSprites = [];
+
+    bots.forEach((bot) => {
+      const sprite = this.add.sprite(
+        bot.col * TILE + TILE / 2,
+        bot.row * TILE + TILE / 2,
+        bot.texture
+      );
+      sprite.setDepth(bot.row + 0.5);
+
+      // Name label
+      const container = this._getOverlayContainer();
+      const nameEl = document.createElement('div');
+      nameEl.textContent = bot.name;
+      nameEl.style.cssText = 'position:absolute;transform:translate(-50%,-100%);font:bold 11px Arial,sans-serif;color:#00ff88;text-shadow:0 0 3px #000,0 0 3px #000;white-space:nowrap;pointer-events:none;';
+      container.appendChild(nameEl);
+      sprite.setData('nameEl', nameEl);
+      sprite.setData('gridX', bot.col);
+      sprite.setData('gridY', bot.row);
+
+      this.botSprites.push(sprite);
+
+      // Random chat messages at random intervals
+      const sendBotMessage = () => {
+        const msg = botPhrases[Math.floor(Math.random() * botPhrases.length)];
+        // Show speech bubble above bot
+        this._showBotSpeechBubble(sprite, msg);
+        // Add to chat panel
+        this.addChatToPanel({
+          id: 'bot-' + bot.name,
+          name: bot.name,
+          message: msg,
+          timestamp: Date.now(),
+        });
+        // Schedule next message (8-20 seconds)
+        const delay = 8000 + Math.random() * 12000;
+        this.time.delayedCall(delay, sendBotMessage);
+      };
+
+      // Start first message after a random delay (3-8 seconds)
+      const initialDelay = 3000 + Math.random() * 5000;
+      this.time.delayedCall(initialDelay, sendBotMessage);
+    });
+  }
+
+  _showBotSpeechBubble(sprite, message) {
+    // Remove existing bubble
+    const oldEl = sprite.getData('speechEl');
+    if (oldEl) oldEl.remove();
+    const oldTimer = sprite.getData('speechTimer');
+    if (oldTimer) oldTimer.remove();
+
+    const displayMsg = message.length > 50 ? message.slice(0, 50) + '...' : message;
+    const container = this._getOverlayContainer();
+    const el = document.createElement('div');
+    el.textContent = displayMsg;
+    el.style.cssText = 'position:absolute;transform:translate(-50%,-100%);background:rgba(0,255,136,0.15);color:#00ff88;border:1px solid #00ff88;font:12px Arial,sans-serif;padding:4px 8px;border-radius:6px;max-width:180px;word-wrap:break-word;text-align:center;pointer-events:none;box-shadow:0 0 8px rgba(0,255,136,0.3);';
+    container.appendChild(el);
+    sprite.setData('speechEl', el);
+
+    const timer = this.time.delayedCall(5000, () => {
+      el.remove();
+      sprite.setData('speechEl', null);
+    });
+    sprite.setData('speechTimer', timer);
+
+    this._updateSpriteLabels(sprite);
   }
 
   animateWorkers() {
