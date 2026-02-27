@@ -45,13 +45,15 @@ const SHIRT_STYLES = {
   'black-logo': 0x1a1a1a,
 };
 
-function randomColor(shirtStyle) {
+function randomColor(shirtStyle, hairStyle, hairColor) {
   const shirt = SHIRT_STYLES[shirtStyle] || pickRandom(SHIRT_COLORS);
+  const hair = hairColor ? parseInt(hairColor, 16) : pickRandom(HAIR_COLORS);
   return {
     skin: pickRandom(SKIN_COLORS),
-    hair: pickRandom(HAIR_COLORS),
+    hair,
     shirt,
     shirtStyle: shirtStyle || null,
+    hairStyle: hairStyle || 'short',
   };
 }
 
@@ -76,7 +78,7 @@ io.on('connection', (socket) => {
   console.log(`Connected: ${socket.id}`);
 
   socket.on('player:join', (data) => {
-    const color = randomColor(data.shirtStyle);
+    const color = randomColor(data.shirtStyle, data.hairStyle, data.hairColor);
     const pos = findSpawnPosition(players);
 
     const player = {

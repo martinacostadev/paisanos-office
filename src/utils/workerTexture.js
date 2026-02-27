@@ -13,29 +13,30 @@ export function drawWorker(g, color, frame) {
 
   // Shirt design overlay
   if (color.shirtStyle === 'blue-lines') {
-    // Boquita: one big yellow horizontal line across the middle
+    // Boquita: big yellow band edge-to-edge across the shirt
     g.fillStyle(0xf5a623);
-    g.fillRect(5, 9 + bounce, 6, 2);
+    g.fillRect(5, 8 + bounce, 6, 4); // full width, bottom portion
   } else if (color.shirtStyle === 'white-v') {
-    // Velez: BIG V crossing almost the entire shirt
+    // Velez: huge V from top corners to bottom center
     g.fillStyle(0x4488cc);
-    // Left arm of V
+    // Row 0 (top): outer edges
     g.fillRect(5, 7 + bounce, 2, 1);
-    g.fillRect(5, 8 + bounce, 2, 1);
-    g.fillRect(6, 9 + bounce, 2, 1);
-    g.fillRect(7, 10 + bounce, 2, 1);
-    // Right arm of V
     g.fillRect(9, 7 + bounce, 2, 1);
+    // Row 1
+    g.fillRect(5, 8 + bounce, 2, 1);
     g.fillRect(9, 8 + bounce, 2, 1);
+    // Row 2: converging
+    g.fillRect(6, 9 + bounce, 2, 1);
     g.fillRect(8, 9 + bounce, 2, 1);
-    // Bottom point merges at center
+    // Row 3: meeting
+    g.fillRect(7, 10 + bounce, 2, 1);
+    // Row 4: point
     g.fillRect(7, 11 + bounce, 2, 1);
   } else if (color.shirtStyle === 'black-logo') {
     // Dark: white cross/star design on chest
     g.fillStyle(0xffffff);
     g.fillRect(7, 8 + bounce, 2, 3);
     g.fillRect(6, 9 + bounce, 4, 1);
-    // Extra details
     g.fillStyle(0xcccccc);
     g.fillRect(6, 8 + bounce, 1, 1);
     g.fillRect(9, 8 + bounce, 1, 1);
@@ -44,7 +45,8 @@ export function drawWorker(g, color, frame) {
   }
 
   // Arms
-  g.fillStyle(color.shirt);
+  const armColor = (color.shirtStyle === 'blue-lines') ? 0xf5a623 : color.shirt;
+  g.fillStyle(armColor);
   if (frame % 2 === 0) {
     g.fillRect(3, 8 + bounce, 2, 4);
     g.fillRect(11, 8 + bounce, 2, 4);
@@ -74,9 +76,26 @@ export function drawWorker(g, color, frame) {
 
   // Hair
   g.fillStyle(color.hair);
-  g.fillRect(5, 1 + bounce, 6, 2);
-  g.fillRect(4, 2 + bounce, 1, 3);
-  g.fillRect(11, 2 + bounce, 1, 3);
+  if (color.hairStyle === 'bald') {
+    // No hair drawn — just a tiny stubble line
+    g.fillRect(5, 2 + bounce, 6, 1);
+  } else if (color.hairStyle === 'mohawk') {
+    // Tall mohawk strip on top
+    g.fillRect(7, 0 + bounce, 2, 3);
+    g.fillRect(6, 1 + bounce, 4, 2);
+  } else if (color.hairStyle === 'long') {
+    // Long hair — covers sides down to shoulders
+    g.fillRect(5, 1 + bounce, 6, 2);
+    g.fillRect(4, 2 + bounce, 1, 6);
+    g.fillRect(11, 2 + bounce, 1, 6);
+    g.fillRect(4, 1 + bounce, 1, 2);
+    g.fillRect(11, 1 + bounce, 1, 2);
+  } else {
+    // Short (default)
+    g.fillRect(5, 1 + bounce, 6, 2);
+    g.fillRect(4, 2 + bounce, 1, 3);
+    g.fillRect(11, 2 + bounce, 1, 3);
+  }
 
   // Eyes
   g.fillStyle(0x000000);

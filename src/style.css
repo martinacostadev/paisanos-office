@@ -79,6 +79,8 @@ body {
   padding: 32px 36px;
   min-width: 320px;
   max-width: 380px;
+  max-height: 90vh;
+  overflow-y: auto;
   text-align: center;
   box-shadow: 0 0 40px rgba(245, 166, 35, 0.3), 0 8px 32px rgba(0, 0, 0, 0.5);
 }
@@ -154,6 +156,57 @@ body {
 }
 
 .shirt-option.selected {
+  border-color: #f5a623;
+  box-shadow: 0 0 8px rgba(245, 166, 35, 0.5);
+}
+
+#hair-style-picker, #hair-color-picker {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.hair-option {
+  width: 36px;
+  height: 36px;
+  border: 2px solid #555;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, transform 0.1s;
+  background: #16213e;
+  color: #f5a623;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+}
+
+.hair-option:hover {
+  transform: scale(1.1);
+}
+
+.hair-option.selected {
+  border-color: #f5a623;
+  box-shadow: 0 0 8px rgba(245, 166, 35, 0.5);
+}
+
+.hair-color-option {
+  width: 36px;
+  height: 36px;
+  border: 2px solid #555;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.1s;
+}
+
+.hair-color-option:hover {
+  transform: scale(1.1);
+}
+
+.hair-color-option.selected {
   border-color: #f5a623;
   box-shadow: 0 0 8px rgba(245, 166, 35, 0.5);
 }

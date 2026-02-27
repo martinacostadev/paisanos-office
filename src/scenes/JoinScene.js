@@ -53,6 +53,55 @@ export default class JoinScene extends Phaser.Scene {
       }
     } catch (e) { /* ignore */ }
 
+    // Hair style picker
+    let selectedHairStyle = 'short';
+    const hairStyleOptions = document.querySelectorAll('.hair-option');
+    const hairStyleLabel = document.getElementById('hair-style-label');
+    hairStyleOptions.forEach((opt) => {
+      opt.addEventListener('click', () => {
+        hairStyleOptions.forEach((o) => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        selectedHairStyle = opt.dataset.hair;
+        if (hairStyleLabel) hairStyleLabel.textContent = opt.dataset.title || '';
+      });
+    });
+
+    // Hair color picker
+    let selectedHairColor = '0x3b2417';
+    const hairColorOptions = document.querySelectorAll('.hair-color-option');
+    const hairColorLabel = document.getElementById('hair-color-label');
+    hairColorOptions.forEach((opt) => {
+      opt.addEventListener('click', () => {
+        hairColorOptions.forEach((o) => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        selectedHairColor = opt.dataset.haircolor;
+        if (hairColorLabel) hairColorLabel.textContent = opt.dataset.title || '';
+      });
+    });
+
+    // Pre-fill hair from localStorage
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      if (saved) {
+        if (saved.hairStyle) {
+          selectedHairStyle = saved.hairStyle;
+          hairStyleOptions.forEach((o) => {
+            const match = o.dataset.hair === selectedHairStyle;
+            o.classList.toggle('selected', match);
+            if (match && hairStyleLabel) hairStyleLabel.textContent = o.dataset.title || '';
+          });
+        }
+        if (saved.hairColor) {
+          selectedHairColor = saved.hairColor;
+          hairColorOptions.forEach((o) => {
+            const match = o.dataset.haircolor === selectedHairColor;
+            o.classList.toggle('selected', match);
+            if (match && hairColorLabel) hairColorLabel.textContent = o.dataset.title || '';
+          });
+        }
+      }
+    } catch (e) { /* ignore */ }
+
     // Show the form
     form.classList.remove('form-hidden');
 
@@ -65,7 +114,7 @@ export default class JoinScene extends Phaser.Scene {
 
       // Save to localStorage for next time
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ name, position, years, shirtStyle: selectedShirt }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ name, position, years, shirtStyle: selectedShirt, hairStyle: selectedHairStyle, hairColor: selectedHairColor }));
       } catch (e) {
         // ignore storage errors
       }
@@ -87,7 +136,7 @@ export default class JoinScene extends Phaser.Scene {
         this.scene.start('BootScene');
       });
 
-      socketManager.join({ name, position, years, shirtStyle: selectedShirt });
+      socketManager.join({ name, position, years, shirtStyle: selectedShirt, hairStyle: selectedHairStyle, hairColor: selectedHairColor });
     };
 
     btn.addEventListener('click', onJoin);
