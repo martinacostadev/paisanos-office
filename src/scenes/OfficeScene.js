@@ -5,7 +5,7 @@ import { generateWorkerTextures, destroyWorkerTextures } from '../utils/workerTe
 
 const TILE = 16;
 const MAP_COLS = 44;
-const MAP_ROWS = 32;
+const MAP_ROWS = 40;
 
 const WALKABLE = 0;
 const SOLID = 1;
@@ -22,6 +22,10 @@ export default class OfficeScene extends Phaser.Scene {
     this.cameraPeers = new Set(); // IDs of players with camera on
     this.micPeers = new Set(); // IDs of players with mic on
     this.currentNearbyIds = new Set(); // Currently displayed remote video peers
+    this.currentMeetingRoom = null; // null or 'meet-1'/'meet-2'
+    this.meetingRoomPlayers = new Set(); // player IDs in same meeting room
+    this.isFullCamMode = false;
+    this.currentRoom = null; // null or 'secret'/'bath-women'/'bath-men'
   }
 
   create() {
@@ -55,6 +59,7 @@ export default class OfficeScene extends Phaser.Scene {
     socketManager.on('player:left', (data) => {
       this.cameraPeers.delete(data.id);
       this.micPeers.delete(data.id);
+      this.meetingRoomPlayers.delete(data.id);
       this.removePlayer(data.id);
       this.updateProximityVideo();
     });
@@ -106,6 +111,9 @@ export default class OfficeScene extends Phaser.Scene {
     this.time.delayedCall(1000, () => this._requestSync());
     this.time.delayedCall(3000, () => this._requestSync());
 
+    // Meeting room listeners
+    this.setupMeetingListeners();
+
     // Settings button
     this.setupSettings();
 
@@ -134,8 +142,14 @@ export default class OfficeScene extends Phaser.Scene {
     // Camera follows local player so they stay centered
     const localSprite = this.players.get(this.localId);
     if (localSprite) {
-      this.cameras.main.startFollow(localSprite, true, 0.15, 0.15);
-      this.cameras.main.setBounds(0, 0, MAP_COLS * TILE, MAP_ROWS * TILE);
+      // Restrict camera to office area (rows 0-15) so hidden rooms below aren't visible
+      this.cameras.main.setBounds(0, 0, MAP_COLS * TILE, 16 * TILE);
+      // Instant snap on first frame, then smooth follow
+      this.cameras.main.startFollow(localSprite, true, 1, 1);
+      this.cameras.main.centerOn(localSprite.x, localSprite.y);
+      this.time.delayedCall(100, () => {
+        this.cameras.main.setLerp(0.15, 0.15);
+      });
     }
   }
 
@@ -155,7 +169,7 @@ export default class OfficeScene extends Phaser.Scene {
         try {
           const stream = await webRTCManager.startCamera();
           localVideo.srcObject = stream;
-          btn.textContent = 'Close cam';
+          btn.textContent = 'Cerrar cam';
           btn.classList.add('cam-on');
           panel.classList.remove('cam-hidden');
           micBtn.classList.remove('mic-btn-hidden');
@@ -168,12 +182,12 @@ export default class OfficeScene extends Phaser.Scene {
       } else {
         webRTCManager.stopCamera();
         localVideo.srcObject = null;
-        btn.textContent = 'Open cam';
+        btn.textContent = 'Abrir cam';
         btn.classList.remove('cam-on');
         panel.classList.add('cam-hidden');
         micBtn.classList.add('mic-btn-hidden');
         micBtn.classList.remove('mic-on');
-        micBtn.textContent = 'Open mic';
+        micBtn.textContent = 'Abrir mic';
         this._hideAllRemoteVideos();
       }
     });
@@ -182,10 +196,10 @@ export default class OfficeScene extends Phaser.Scene {
       if (!webRTCManager.cameraOn) return;
       const isOn = webRTCManager.toggleMic();
       if (isOn) {
-        micBtn.textContent = 'Close mic';
+        micBtn.textContent = 'Cerrar mic';
         micBtn.classList.add('mic-on');
       } else {
-        micBtn.textContent = 'Open mic';
+        micBtn.textContent = 'Abrir mic';
         micBtn.classList.remove('mic-on');
       }
     });
@@ -199,15 +213,14 @@ export default class OfficeScene extends Phaser.Scene {
       const form = document.getElementById('join-form-overlay');
       const joinBtn = document.getElementById('join-btn');
       joinBtn.disabled = false;
-      joinBtn.textContent = 'SAVE';
+      joinBtn.textContent = 'GUARDAR';
       form.classList.remove('form-hidden');
 
       // Replace the JOIN button behavior with SAVE behavior
       const saveHandler = () => {
         const name = document.getElementById('join-name').value.trim();
         const position = document.getElementById('join-position').value.trim();
-        const years = document.getElementById('join-years').value.trim();
-        if (!name || !position || !years) return;
+        if (!name || !position) return;
 
         // Read selected shirt
         let shirtStyle = 'blue-lines';
@@ -224,9 +237,14 @@ export default class OfficeScene extends Phaser.Scene {
         const colorOpts = document.querySelectorAll('.hair-color-option');
         colorOpts.forEach((o) => { if (o.classList.contains('selected')) hairColor = o.dataset.haircolor; });
 
+        // Read selected skin color
+        let skinColor = '0xf5d0b0';
+        const skinOpts = document.querySelectorAll('.skin-color-option');
+        skinOpts.forEach((o) => { if (o.classList.contains('selected')) skinColor = o.dataset.skincolor; });
+
         // Save to localStorage
         try {
-          localStorage.setItem('paisanos_user', JSON.stringify({ name, position, years, shirtStyle, hairStyle, hairColor }));
+          localStorage.setItem('paisanos_user', JSON.stringify({ name, position, shirtStyle, hairStyle, hairColor, skinColor }));
         } catch (e) { /* ignore */ }
 
         form.classList.add('form-hidden');
@@ -243,7 +261,7 @@ export default class OfficeScene extends Phaser.Scene {
           this._overlayContainer = null;
           this.scene.restart();
         });
-        socketManager.join({ name, position, years, shirtStyle, hairStyle, hairColor });
+        socketManager.join({ name, position, shirtStyle, hairStyle, hairColor, skinColor });
 
         // Remove this handler to avoid duplication
         joinBtn.removeEventListener('click', saveHandler);
@@ -259,23 +277,33 @@ export default class OfficeScene extends Phaser.Scene {
     const localSprite = this.players.get(this.localId);
     if (!localSprite) return;
 
-    const lx = localSprite.getData('gridX');
-    const ly = localSprite.getData('gridY');
-
-    // Build set of nearby peers (within PROXIMITY_TILES)
     const nearbyPeers = new Set();
 
-    for (const peerId of this.cameraPeers) {
-      if (peerId === this.localId) continue;
-      const sprite = this.players.get(peerId);
-      if (!sprite) continue;
+    if (this.currentMeetingRoom) {
+      // In meeting room: show ALL members regardless of distance
+      for (const peerId of this.meetingRoomPlayers) {
+        if (peerId === this.localId) continue;
+        if (this.cameraPeers.has(peerId)) {
+          nearbyPeers.add(peerId);
+        }
+      }
+    } else {
+      // Normal proximity check
+      const lx = localSprite.getData('gridX');
+      const ly = localSprite.getData('gridY');
 
-      const px = sprite.getData('gridX');
-      const py = sprite.getData('gridY');
-      const dist = Math.max(Math.abs(lx - px), Math.abs(ly - py));
+      for (const peerId of this.cameraPeers) {
+        if (peerId === this.localId) continue;
+        const sprite = this.players.get(peerId);
+        if (!sprite) continue;
 
-      if (dist <= PROXIMITY_TILES) {
-        nearbyPeers.add(peerId);
+        const px = sprite.getData('gridX');
+        const py = sprite.getData('gridY');
+        const dist = Math.max(Math.abs(lx - px), Math.abs(ly - py));
+
+        if (dist <= PROXIMITY_TILES) {
+          nearbyPeers.add(peerId);
+        }
       }
     }
 
@@ -318,7 +346,7 @@ export default class OfficeScene extends Phaser.Scene {
 
     const label = document.createElement('span');
     const sprite = this.players.get(peerId);
-    label.textContent = sprite?.getData('workerData')?.name || 'Nearby';
+    label.textContent = sprite?.getData('workerData')?.name || 'Cercano';
 
     box.appendChild(video);
     box.appendChild(label);
@@ -375,13 +403,10 @@ export default class OfficeScene extends Phaser.Scene {
   _worldToScreen(worldX, worldY) {
     const cam = this.cameras.main;
     const canvas = this.sys.game.canvas;
-    // Map world coords to actual displayed pixel coords
-    // canvas.clientWidth/Height = actual CSS size on screen
-    // canvas.width/height = Phaser internal resolution (before zoom)
-    const scaleX = canvas.clientWidth / canvas.width;
-    const scaleY = canvas.clientHeight / canvas.height;
-    const sx = (worldX - cam.scrollX) * scaleX;
-    const sy = (worldY - cam.scrollY) * scaleY;
+    // Use worldView which gives the actual visible world rectangle (accounts for zoom)
+    const wv = cam.worldView;
+    const sx = (worldX - wv.x) / wv.width * canvas.clientWidth;
+    const sy = (worldY - wv.y) / wv.height * canvas.clientHeight;
     return { x: sx, y: sy };
   }
 
@@ -428,7 +453,6 @@ export default class OfficeScene extends Phaser.Scene {
       id: data.id,
       name: data.name,
       position: data.position,
-      years: data.years,
       color: data.color,
     });
     sprite.setData('animFrame', 0);
@@ -512,8 +536,13 @@ export default class OfficeScene extends Phaser.Scene {
         let isSolid = false;
 
         if (row === 0) {
+          // REUNIONES lobby door in top wall (single door at cols 7-8)
+          if (col === 7 || col === 8) {
+            tileKey = 'reuniones-door';
+            isSolid = false;
+          }
           // Bathroom doors in top wall
-          if ((col === 14 || col === 15)) {
+          else if ((col === 14 || col === 15)) {
             tileKey = 'door-women';
             isSolid = false; // walkable door
           } else if ((col === 18 || col === 19)) {
@@ -527,8 +556,14 @@ export default class OfficeScene extends Phaser.Scene {
           tileKey = col >= 28 ? 'hedge' : 'wall-dark';
           isSolid = true;
         } else if (col === 0) {
-          tileKey = 'wall-dark';
-          isSolid = true;
+          // Double entry door on the left wall
+          if (row === 3 || row === 4) {
+            tileKey = 'entry-door';
+            isSolid = false; // walkable door
+          } else {
+            tileKey = 'wall-dark';
+            isSolid = true;
+          }
         } else if (col === MAP_COLS - 1) {
           tileKey = 'hedge';
           isSolid = true;
@@ -560,7 +595,7 @@ export default class OfficeScene extends Phaser.Scene {
       }
     }
 
-    // --- Extended area (rows 16-31): all solid by default ---
+    // --- Extended area (rows 16-39): all solid by default ---
     for (let row = 16; row < MAP_ROWS; row++) {
       for (let col = 0; col < MAP_COLS; col++) {
         this.collisionMap[row][col] = SOLID;
@@ -573,9 +608,17 @@ export default class OfficeScene extends Phaser.Scene {
     // --- Bathrooms (in extended area) ---
     this.buildBathrooms();
 
-    this.placeSolid('pillar', 8, 1);
+    // --- Meeting Rooms (rows 25-31 in extended area) ---
+    this.buildMeetingRooms();
 
-    [4, 12, 17, 22].forEach((col) => {
+    // "ENTRADA" label next to the entry door on the left wall
+    this.add.text(-2, 3.5 * TILE, 'ENTRADA', {
+      fontFamily: 'Arial', fontSize: '5px', color: '#f5a623', fontStyle: 'bold',
+    }).setOrigin(1, 0.5).setDepth(9999).setAngle(-90);
+
+    this.placeSolid('pillar', 12, 1);
+
+    [4, 17, 22].forEach((col) => {
       this.add.image(col * TILE + TILE / 2, TILE / 2, 'ceiling-light').setDepth(0);
     });
 
@@ -604,20 +647,17 @@ export default class OfficeScene extends Phaser.Scene {
     this.placeSolid('couch-mid', 5, 9);
     this.placeSolid('couch-bottom', 5, 10);
 
-    this.placeSolid('plant', 7, 1);
+    this.placeSolid('plant', 10, 1);
     this.placeSolid('wall-shelf', 1, 1);
     this.placeSolid('wall-shelf', 1, 2);
     this.placeDecor('backpack', 7, 12);
+    this.placeDecor('guitar', 25, 13);
+    this.placeDecor('musical-notes', 26, 13);
 
     this.placeBigVerticalDesk(10, 8);
     this.placeBigVerticalDesk(15, 8);
     this.placeBigVerticalDesk(20, 8);
 
-    this.placeSolid('wall-shelf', 12, 1);
-    this.placeSolid('wall-shelf', 13, 1);
-    this.placeSolid('wall-shelf', 17, 1);
-    this.placeSolid('wall-shelf', 18, 1);
-    this.placeSolid('plant', 9, 1);
 
     for (let r = 1; r <= 4; r++) {
       this.placeSolid('kitchen-wall', 20, r);
@@ -681,6 +721,15 @@ export default class OfficeScene extends Phaser.Scene {
     this.placeSolid('flower', 36, 1);
     this.placeSolid('flower2', 39, 3);
 
+    // Concrete bench seating — top edge of garden (row 1, walkable so players can sit)
+    for (let c = 30; c <= 34; c++) {
+      this.placeDecor('concrete-bench-h', c, 1);
+    }
+    // Concrete bench seating — right edge of garden (col 42, walkable)
+    for (let r = 4; r <= 8; r++) {
+      this.placeDecor('concrete-bench-v', 42, r);
+    }
+
     this.placeSolid('hammock', 40, 7);
 
     // "SECRET" sign above the door
@@ -692,22 +741,46 @@ export default class OfficeScene extends Phaser.Scene {
 
     // Store teleport definitions: { fromCol, fromRow, toCol, toRow }
     this.teleports = [
-      // Garden door -> Secret room entrance
-      { fromCol: 28, fromRow: 5, toCol: 10, toRow: 19 },
+      // Garden door -> Secret room entrance (appear near exit portal at top)
+      { fromCol: 28, fromRow: 5, toCol: 10, toRow: 18, room: 'secret' },
       // Secret room exit -> Garden
-      { fromCol: 10, fromRow: 17, toCol: 28, toRow: 6 },
-      // Women's bathroom door (top wall) -> Women's bathroom
-      { fromCol: 14, fromRow: 0, toCol: 24, toRow: 22 },
-      { fromCol: 15, fromRow: 0, toCol: 25, toRow: 22 },
+      { fromCol: 10, fromRow: 17, toCol: 28, toRow: 6, roomLeave: true },
+      // Women's bathroom door (top wall) -> Women's bathroom (appear near return door)
+      { fromCol: 14, fromRow: 0, toCol: 25, toRow: 18, room: 'bath-women' },
+      { fromCol: 15, fromRow: 0, toCol: 25, toRow: 18, room: 'bath-women' },
       // Women's bathroom return -> Office
-      { fromCol: 24, fromRow: 17, toCol: 14, toRow: 1 },
-      { fromCol: 25, fromRow: 17, toCol: 15, toRow: 1 },
-      // Men's bathroom door (top wall) -> Men's bathroom
-      { fromCol: 18, fromRow: 0, toCol: 32, toRow: 22 },
-      { fromCol: 19, fromRow: 0, toCol: 33, toRow: 22 },
+      { fromCol: 24, fromRow: 17, toCol: 14, toRow: 1, roomLeave: true },
+      { fromCol: 25, fromRow: 17, toCol: 15, toRow: 1, roomLeave: true },
+      // Men's bathroom door (top wall) -> Men's bathroom (appear near return door)
+      { fromCol: 18, fromRow: 0, toCol: 33, toRow: 18, room: 'bath-men' },
+      { fromCol: 19, fromRow: 0, toCol: 33, toRow: 18, room: 'bath-men' },
       // Men's bathroom return -> Office
-      { fromCol: 32, fromRow: 17, toCol: 18, toRow: 1 },
-      { fromCol: 33, fromRow: 17, toCol: 19, toRow: 1 },
+      { fromCol: 32, fromRow: 17, toCol: 18, toRow: 1, roomLeave: true },
+      { fromCol: 33, fromRow: 17, toCol: 19, toRow: 1, roomLeave: true },
+      // Office -> Lobby (through REUNIONES door at cols 7-8, row 0)
+      { fromCol: 7, fromRow: 0, toCol: 11, toRow: 32, room: 'lobby-reuniones' },
+      { fromCol: 8, fromRow: 0, toCol: 12, toRow: 32, room: 'lobby-reuniones' },
+      // Lobby exit (bottom wall, cols 11-12, row 38) -> back to office
+      { fromCol: 11, fromRow: 38, toCol: 7, toRow: 1, roomLeave: true },
+      { fromCol: 12, fromRow: 38, toCol: 8, toRow: 1, roomLeave: true },
+      // Lobby -> Room 1 (left wall, col 6, rows 34-35)
+      { fromCol: 6, fromRow: 34, toCol: 4, toRow: 33, meeting: 'meet-1' },
+      { fromCol: 6, fromRow: 35, toCol: 4, toRow: 34, meeting: 'meet-1' },
+      // Room 1 -> Lobby (right wall door, col 5, rows 33-34)
+      { fromCol: 5, fromRow: 33, toCol: 7, toRow: 34, meetingLeave: 'meet-1', returnToLobby: true },
+      { fromCol: 5, fromRow: 34, toCol: 7, toRow: 35, meetingLeave: 'meet-1', returnToLobby: true },
+      // Lobby -> Room 2 (top wall, cols 11-12, row 31)
+      { fromCol: 11, fromRow: 31, toCol: 11, toRow: 29, meeting: 'meet-2' },
+      { fromCol: 12, fromRow: 31, toCol: 12, toRow: 29, meeting: 'meet-2' },
+      // Room 2 -> Lobby (bottom wall door, cols 11-12, row 30)
+      { fromCol: 11, fromRow: 30, toCol: 11, toRow: 32, meetingLeave: 'meet-2', returnToLobby: true },
+      { fromCol: 12, fromRow: 30, toCol: 12, toRow: 32, meetingLeave: 'meet-2', returnToLobby: true },
+      // Lobby -> Room 3 (right wall, col 17, rows 34-35)
+      { fromCol: 17, fromRow: 34, toCol: 19, toRow: 33, meeting: 'meet-3' },
+      { fromCol: 17, fromRow: 35, toCol: 19, toRow: 34, meeting: 'meet-3' },
+      // Room 3 -> Lobby (left wall door, col 18, rows 33-34)
+      { fromCol: 18, fromRow: 33, toCol: 16, toRow: 34, meetingLeave: 'meet-3', returnToLobby: true },
+      { fromCol: 18, fromRow: 34, toCol: 16, toRow: 35, meetingLeave: 'meet-3', returnToLobby: true },
     ];
   }
 
@@ -761,13 +834,13 @@ export default class OfficeScene extends Phaser.Scene {
   }
 
   buildBathrooms() {
-    // Women's bathroom: cols 22-28, rows 17-23
-    this.buildBathroomRoom(22, 28, 17, 23, 'door-women', 24, 25);
-    // Men's bathroom: cols 30-36, rows 17-23
-    this.buildBathroomRoom(30, 36, 17, 23, 'door-men', 32, 33);
+    // Women's bathroom: cols 22-28, rows 17-23, single door at col 25
+    this.buildBathroomRoom(22, 28, 17, 23, 'door-women', 25);
+    // Men's bathroom: cols 30-36, rows 17-23, single door at col 33
+    this.buildBathroomRoom(30, 36, 17, 23, 'door-men', 33);
   }
 
-  buildBathroomRoom(colStart, colEnd, rowStart, rowEnd, doorKey, doorCol1, doorCol2) {
+  buildBathroomRoom(colStart, colEnd, rowStart, rowEnd, doorKey, doorCol) {
     // Walls
     for (let col = colStart; col <= colEnd; col++) {
       this.placeSolid('bathroom-wall', col, rowStart);
@@ -784,11 +857,11 @@ export default class OfficeScene extends Phaser.Scene {
         this.collisionMap[row][col] = WALKABLE;
       }
     }
-    // Return doors at top wall
-    this.add.image(doorCol1 * TILE + TILE / 2, rowStart * TILE + TILE / 2, 'return-door').setDepth(rowStart);
-    this.collisionMap[rowStart][doorCol1] = WALKABLE;
-    this.add.image(doorCol2 * TILE + TILE / 2, rowStart * TILE + TILE / 2, 'return-door').setDepth(rowStart);
-    this.collisionMap[rowStart][doorCol2] = WALKABLE;
+    // Single return door at top wall
+    this.add.image(doorCol * TILE + TILE / 2, rowStart * TILE + TILE / 2, 'return-door').setDepth(rowStart + 0.1);
+    this.collisionMap[rowStart][doorCol] = WALKABLE;
+    // Adjacent col also walkable for teleport
+    this.collisionMap[rowStart][doorCol - 1] = WALKABLE;
     // Toilets (along back wall)
     this.placeSolid('toilet', colStart + 1, rowEnd - 1);
     this.placeSolid('toilet', colStart + 3, rowEnd - 1);
@@ -878,8 +951,7 @@ export default class OfficeScene extends Phaser.Scene {
   showInfoPanel(data) {
     document.getElementById('modal-name').textContent = data.name;
     document.getElementById('modal-position').textContent = data.position;
-    document.getElementById('modal-years').textContent =
-      `${data.years} year${data.years !== 1 ? 's' : ''} at PAISANOS`;
+    document.getElementById('modal-years').textContent = '';
 
     const canvas = document.getElementById('modal-avatar');
     if (canvas) {
@@ -898,9 +970,9 @@ export default class OfficeScene extends Phaser.Scene {
 
     const hintEl = document.getElementById('modal-hint');
     if (data.id === this.localId) {
-      hintEl.textContent = 'Use arrow keys to move';
+      hintEl.textContent = 'Usa las flechas para moverte';
     } else {
-      hintEl.textContent = 'Online player';
+      hintEl.textContent = 'Jugador en linea';
     }
 
     this.modalOverlay.classList.remove('modal-hidden');
@@ -992,15 +1064,50 @@ export default class OfficeScene extends Phaser.Scene {
   // --- Game loop ---
 
   update(time) {
-    // Always update DOM overlay positions (camera may have moved)
-    for (const [, sprite] of this.players) {
+    // Handle meeting room visibility (privacy)
+    const inMeeting = !!this.currentMeetingRoom;
+    for (const [id, sprite] of this.players) {
+      if (id === this.localId) {
+        this._updateSpriteLabels(sprite);
+        continue;
+      }
+      if (inMeeting) {
+        // In meeting: only show players who are also in this meeting room
+        const visible = this.meetingRoomPlayers.has(id);
+        sprite.setVisible(visible);
+        const nameEl = sprite.getData('nameEl');
+        if (nameEl) nameEl.style.display = visible ? '' : 'none';
+        const speechEl = sprite.getData('speechEl');
+        if (speechEl) speechEl.style.display = visible ? '' : 'none';
+      } else {
+        sprite.setVisible(true);
+        const nameEl = sprite.getData('nameEl');
+        if (nameEl) nameEl.style.display = '';
+        const speechEl = sprite.getData('speechEl');
+        if (speechEl) speechEl.style.display = '';
+      }
       this._updateSpriteLabels(sprite);
     }
+    // Hide/show NPCs and bots based on meeting room state
     if (this.gangsterSprite) {
+      this.gangsterSprite.setVisible(!inMeeting);
+      const gNameEl = this.gangsterSprite.getData('nameEl');
+      if (gNameEl) gNameEl.style.display = inMeeting ? 'none' : '';
       this._updateSpriteLabels(this.gangsterSprite);
     }
     if (this.botSprites) {
-      this.botSprites.forEach((bot) => this._updateSpriteLabels(bot));
+      this.botSprites.forEach((bot) => {
+        bot.setVisible(!inMeeting);
+        const bNameEl = bot.getData('nameEl');
+        if (bNameEl) bNameEl.style.display = inMeeting ? 'none' : '';
+        const bSpeechEl = bot.getData('speechEl');
+        if (bSpeechEl) bSpeechEl.style.display = inMeeting ? 'none' : '';
+        this._updateSpriteLabels(bot);
+      });
+    }
+    // Hide meeting labels when inside a meeting room
+    if (this.meetingLabels) {
+      this.meetingLabels.forEach((label) => label.setVisible(!inMeeting));
     }
 
     const localSprite = this.players.get(this.localId);
@@ -1055,8 +1162,8 @@ export default class OfficeScene extends Phaser.Scene {
 
     socketManager.sendMove(newX, newY);
 
-    // Check teleport triggers
-    this.checkTeleport(localSprite, newX, newY);
+    // Check teleport triggers (pass movement direction for correct bounce-back)
+    this.checkTeleport(localSprite, newX, newY, dx, dy);
 
     // Check chair sit / "EN REU" badge
     this.checkChairStatus(localSprite, newX, newY);
@@ -1088,12 +1195,12 @@ export default class OfficeScene extends Phaser.Scene {
         const localVideo = document.getElementById('cam-local');
         webRTCManager.stopCamera();
         localVideo.srcObject = null;
-        btn.textContent = 'Open cam';
+        btn.textContent = 'Abrir cam';
         btn.classList.remove('cam-on');
         panel.classList.add('cam-hidden');
         micBtn.classList.add('mic-btn-hidden');
         micBtn.classList.remove('mic-on');
-        micBtn.textContent = 'Open mic';
+        micBtn.textContent = 'Abrir mic';
         this._hideAllRemoteVideos();
       }
     } else if (!onChair && wasOnChair) {
@@ -1115,7 +1222,7 @@ export default class OfficeScene extends Phaser.Scene {
           try {
             const stream = await webRTCManager.startCamera();
             localVideo.srcObject = stream;
-            btn.textContent = 'Close cam';
+            btn.textContent = 'Cerrar cam';
             btn.classList.add('cam-on');
             panel.classList.remove('cam-hidden');
             micBtn.classList.remove('mic-btn-hidden');
@@ -1123,7 +1230,7 @@ export default class OfficeScene extends Phaser.Scene {
             // Restore mic if it was on
             if (sprite.getData('micWasOn') && !webRTCManager.micOn) {
               webRTCManager.toggleMic();
-              micBtn.textContent = 'Close mic';
+              micBtn.textContent = 'Cerrar mic';
               micBtn.classList.add('mic-on');
             }
           } catch (err) {
@@ -1134,10 +1241,39 @@ export default class OfficeScene extends Phaser.Scene {
     }
   }
 
-  checkTeleport(sprite, x, y) {
+  checkTeleport(sprite, x, y, moveDx, moveDy) {
     if (!this.teleports) return;
     for (const tp of this.teleports) {
       if (x === tp.fromCol && y === tp.fromRow) {
+        // Meeting room entry — requires server approval
+        if (tp.meeting) {
+          this.tryJoinMeeting(tp.meeting, tp.toCol, tp.toRow);
+          // Bounce player back to where they came from (reverse movement direction)
+          const prevX = x - (moveDx || 0);
+          const prevY = y - (moveDy || 0);
+          sprite.setData('gridX', prevX);
+          sprite.setData('gridY', prevY);
+          sprite.x = prevX * TILE + TILE / 2;
+          sprite.y = prevY * TILE + TILE / 2;
+          sprite.setDepth(prevY + 0.5);
+          this._updateSpriteLabels(sprite);
+          socketManager.sendMove(prevX, prevY);
+          break;
+        }
+        // Meeting room exit
+        if (tp.meetingLeave) {
+          this.leaveMeetingRoom(tp.returnToLobby);
+        }
+        // Room entry — zoom camera to room bounds
+        if (tp.room) {
+          this.currentRoom = tp.room;
+          this._setRoomCameraBounds(tp.room);
+        }
+        // Room exit — restore full map camera and follow
+        if (tp.roomLeave) {
+          this.currentRoom = null;
+          this._restoreCamera();
+        }
         sprite.setData('gridX', tp.toCol);
         sprite.setData('gridY', tp.toRow);
         sprite.x = tp.toCol * TILE + TILE / 2;
@@ -1184,7 +1320,7 @@ export default class OfficeScene extends Phaser.Scene {
       // Show in chat panel
       this.addChatToPanel({
         id: this.localId,
-        name: 'You',
+        name: 'Vos',
         message: text,
         timestamp: Date.now(),
       });
@@ -1236,7 +1372,7 @@ export default class OfficeScene extends Phaser.Scene {
 
     const nameSpan = document.createElement('span');
     nameSpan.className = 'chat-bubble-name';
-    nameSpan.textContent = isSelf ? 'You' : data.name;
+    nameSpan.textContent = isSelf ? 'Vos' : data.name;
 
     const timeSpan = document.createElement('span');
     timeSpan.className = 'chat-bubble-time';
@@ -1387,6 +1523,390 @@ export default class OfficeScene extends Phaser.Scene {
     sprite.setData('speechTimer', timer);
 
     this._updateSpriteLabels(sprite);
+  }
+
+  buildMeetingRooms() {
+    // Build lobby (cols 6-17, rows 31-38)
+    this.buildLobby();
+    // Room 1 (left): cols 0-5, rows 31-36, door on right wall (col 5, rows 33-34)
+    this.buildMeetingRoom(0, 5, 31, 36, 'right', 5, 33, 34);
+    // Room 2 (above): cols 8-15, rows 25-30, door on bottom wall (cols 11-12, row 30)
+    this.buildMeetingRoom(8, 15, 25, 30, 'bottom', null, 11, 12);
+    // Room 3 (right): cols 18-23, rows 31-36, door on left wall (col 18, rows 33-34)
+    this.buildMeetingRoom(18, 23, 31, 36, 'left', 18, 33, 34);
+
+    // Force all lobby door positions walkable AFTER all room builds
+    // Lobby door to Room 1 (col 6, rows 34-35)
+    this.collisionMap[34][6] = WALKABLE;
+    this.collisionMap[35][6] = WALKABLE;
+    // Lobby door to Room 2 (cols 11-12, row 31)
+    this.collisionMap[31][11] = WALKABLE;
+    this.collisionMap[31][12] = WALKABLE;
+    // Lobby door to Room 3 (col 17, rows 34-35)
+    this.collisionMap[34][17] = WALKABLE;
+    this.collisionMap[35][17] = WALKABLE;
+    // Lobby exit door (cols 11-12, row 38)
+    this.collisionMap[38][11] = WALKABLE;
+    this.collisionMap[38][12] = WALKABLE;
+    // Room 1 return door (col 5, rows 33-34)
+    this.collisionMap[33][5] = WALKABLE;
+    this.collisionMap[34][5] = WALKABLE;
+    // Room 2 return door (cols 11-12, row 30)
+    this.collisionMap[30][11] = WALKABLE;
+    this.collisionMap[30][12] = WALKABLE;
+    // Room 3 return door (col 18, rows 33-34)
+    this.collisionMap[33][18] = WALKABLE;
+    this.collisionMap[34][18] = WALKABLE;
+
+    // "REUS" sign on the wall above the door (col 6, row 0)
+    this.meetingLabels = [];
+    const sign = this.add.image(6 * TILE + TILE / 2, 0.5 * TILE, 'reus-sign').setDepth(9999);
+    this.meetingLabels.push(sign);
+  }
+
+  buildLobby() {
+    // Lobby: cols 6-17, rows 31-38 (12w x 8h)
+    const cS = 6, cE = 17, rS = 31, rE = 38;
+
+    // Door tile positions to skip in wall loops (only the single tile with the door graphic)
+    const leftDoorRows = new Set([34]);
+    const rightDoorRows = new Set([34]);
+    const topDoorCols = new Set([11]);
+    const bottomDoorCols = new Set([11]);
+
+    // Top wall (skip door cols)
+    for (let col = cS; col <= cE; col++) {
+      if (topDoorCols.has(col)) continue;
+      this.placeSolid('wall-dark', col, rS);
+    }
+    // Bottom wall (skip door cols)
+    for (let col = cS; col <= cE; col++) {
+      if (bottomDoorCols.has(col)) continue;
+      this.placeSolid('wall-dark', col, rE);
+    }
+    // Left wall (skip door rows)
+    for (let row = rS; row <= rE; row++) {
+      if (leftDoorRows.has(row)) continue;
+      this.placeSolid('wall-dark', cS, row);
+    }
+    // Right wall (skip door rows)
+    for (let row = rS; row <= rE; row++) {
+      if (rightDoorRows.has(row)) continue;
+      this.placeSolid('wall-dark', cE, row);
+    }
+
+    // Floor (interior: cols 7-16, rows 32-37)
+    for (let row = rS + 1; row <= rE - 1; row++) {
+      for (let col = cS + 1; col <= cE - 1; col++) {
+        this.add.image(col * TILE + TILE / 2, row * TILE + TILE / 2, 'lobby-floor');
+        this.collisionMap[row][col] = WALKABLE;
+      }
+    }
+
+    // --- Doors on lobby walls (single door tile, no gaps) ---
+
+    // Door to Room 1 (left wall, col 6, row 34) — single door tile
+    this.add.image(cS * TILE + TILE / 2, 34 * TILE + TILE / 2, 'meeting-door-1').setDepth(34 + 0.1);
+    this.collisionMap[34][cS] = WALKABLE;
+    this.collisionMap[35][cS] = WALKABLE;
+
+    // Door to Room 2 (top wall, col 11, row 31) — single door tile
+    this.add.image(11 * TILE + TILE / 2, rS * TILE + TILE / 2, 'meeting-door-2').setDepth(rS + 0.1);
+    this.collisionMap[rS][11] = WALKABLE;
+    this.collisionMap[rS][12] = WALKABLE;
+
+    // Door to Room 3 (right wall, col 17, row 34) — single door tile
+    this.add.image(cE * TILE + TILE / 2, 34 * TILE + TILE / 2, 'meeting-door-3').setDepth(34 + 0.1);
+    this.collisionMap[34][cE] = WALKABLE;
+    this.collisionMap[35][cE] = WALKABLE;
+
+    // Exit door at bottom wall (col 11, row 38) — single door tile
+    this.add.image(11 * TILE + TILE / 2, rE * TILE + TILE / 2, 'lobby-exit-door').setDepth(rE + 0.1);
+    this.collisionMap[rE][11] = WALKABLE;
+    this.collisionMap[rE][12] = WALKABLE;
+
+    // "VOLVER" text above exit door
+    this.add.text(11.5 * TILE, (rE - 0.3) * TILE, 'VOLVER', {
+      fontFamily: 'Arial', fontSize: '7px', color: '#f5a623', fontStyle: 'bold',
+      resolution: 4,
+    }).setOrigin(0.5, 1).setDepth(9999);
+  }
+
+  buildMeetingRoom(colStart, colEnd, rowStart, rowEnd, doorWall, doorFixedCoord, doorCoord1, doorCoord2) {
+    // Walls
+    for (let col = colStart; col <= colEnd; col++) {
+      this.placeSolid('wall-dark', col, rowStart);
+      this.placeSolid('wall-dark', col, rowEnd);
+    }
+    for (let row = rowStart; row <= rowEnd; row++) {
+      this.placeSolid('wall-dark', colStart, row);
+      this.placeSolid('wall-dark', colEnd, row);
+    }
+    // Floor
+    for (let row = rowStart + 1; row <= rowEnd - 1; row++) {
+      for (let col = colStart + 1; col <= colEnd - 1; col++) {
+        this.add.image(col * TILE + TILE / 2, row * TILE + TILE / 2, 'meeting-floor');
+        this.collisionMap[row][col] = WALKABLE;
+      }
+    }
+    // Conference table in center (2 wide x 2 tall)
+    const centerCol = Math.floor((colStart + colEnd) / 2);
+    const centerRow = Math.floor((rowStart + rowEnd) / 2);
+    this.placeSolid('conference-table', centerCol, centerRow - 1);
+    this.placeSolid('conference-table', centerCol + 1, centerRow - 1);
+    this.placeSolid('conference-table', centerCol, centerRow);
+    this.placeSolid('conference-table', centerCol + 1, centerRow);
+
+    // Return door on the specified wall
+    if (doorWall === 'bottom') {
+      // Door on bottom wall (2 tiles wide)
+      this.add.image(doorCoord1 * TILE + TILE / 2, rowEnd * TILE + TILE / 2, 'meeting-return-door').setDepth(rowEnd);
+      this.collisionMap[rowEnd][doorCoord1] = WALKABLE;
+      this.add.image(doorCoord2 * TILE + TILE / 2, rowEnd * TILE + TILE / 2, 'meeting-return-door').setDepth(rowEnd);
+      this.collisionMap[rowEnd][doorCoord2] = WALKABLE;
+    } else if (doorWall === 'right') {
+      // Door on right wall (2 tiles tall)
+      this.add.image(colEnd * TILE + TILE / 2, doorCoord1 * TILE + TILE / 2, 'meeting-return-door').setDepth(doorCoord1);
+      this.collisionMap[doorCoord1][colEnd] = WALKABLE;
+      this.add.image(colEnd * TILE + TILE / 2, doorCoord2 * TILE + TILE / 2, 'meeting-return-door').setDepth(doorCoord2);
+      this.collisionMap[doorCoord2][colEnd] = WALKABLE;
+    } else if (doorWall === 'left') {
+      // Door on left wall (2 tiles tall)
+      this.add.image(colStart * TILE + TILE / 2, doorCoord1 * TILE + TILE / 2, 'meeting-return-door').setDepth(doorCoord1);
+      this.collisionMap[doorCoord1][colStart] = WALKABLE;
+      this.add.image(colStart * TILE + TILE / 2, doorCoord2 * TILE + TILE / 2, 'meeting-return-door').setDepth(doorCoord2);
+      this.collisionMap[doorCoord2][colStart] = WALKABLE;
+    }
+
+    // Wall decorations
+    // Whiteboard on top wall (center, 2 tiles wide)
+    this.add.image(centerCol * TILE + TILE / 2, rowStart * TILE + TILE / 2, 'whiteboard').setDepth(rowStart + 0.1);
+    this.add.image((centerCol + 1) * TILE + TILE / 2, rowStart * TILE + TILE / 2, 'whiteboard').setDepth(rowStart + 0.1);
+    // Wall clock
+    if (doorWall !== 'left') {
+      this.add.image(colStart * TILE + TILE / 2, (rowStart + 2) * TILE + TILE / 2, 'wall-clock').setDepth(rowStart + 2.1);
+    }
+    // Wall painting
+    if (doorWall !== 'right') {
+      this.add.image(colEnd * TILE + TILE / 2, (rowStart + 2) * TILE + TILE / 2, 'wall-painting').setDepth(rowStart + 2.1);
+    }
+  }
+
+  setupMeetingListeners() {
+    // Pending teleport data while waiting for server response
+    this._pendingMeetingTeleport = null;
+
+    socketManager.on('meeting:updated', (data) => {
+      const { roomId, owner, maxCapacity, playerIds } = data;
+      // If we just tried to join and this is the response
+      if (this._pendingMeetingTeleport && this._pendingMeetingTeleport.roomId === roomId) {
+        if (playerIds.includes(this.localId)) {
+          // Success — teleport the player
+          const tp = this._pendingMeetingTeleport;
+          const localSprite = this.players.get(this.localId);
+          if (localSprite) {
+            localSprite.setData('gridX', tp.toCol);
+            localSprite.setData('gridY', tp.toRow);
+            localSprite.x = tp.toCol * TILE + TILE / 2;
+            localSprite.y = tp.toRow * TILE + TILE / 2;
+            localSprite.setDepth(tp.toRow + 0.5);
+            this._updateSpriteLabels(localSprite);
+            socketManager.sendMove(tp.toCol, tp.toRow);
+          }
+          this.currentMeetingRoom = roomId;
+          this.currentRoom = null; // Clear lobby/room state when entering meeting
+          this._pendingMeetingTeleport = null;
+          // Restrict camera to meeting room bounds
+          this._setMeetingCameraBounds(roomId);
+        }
+      }
+      // Update meeting room players if we're in this room
+      if (this.currentMeetingRoom === roomId) {
+        this.meetingRoomPlayers = new Set(playerIds);
+        this.updateProximityVideo();
+        this._updateMeetingUI(owner, maxCapacity, playerIds);
+      }
+    });
+
+    socketManager.on('meeting:full', ({ roomId }) => {
+      this._pendingMeetingTeleport = null;
+      this._showMeetingFullMessage();
+    });
+
+    // Setup fullcam button
+    const fullcamBtn = document.getElementById('fullcam-btn');
+    fullcamBtn.addEventListener('click', () => {
+      this.toggleFullCam();
+    });
+
+    // Setup meeting settings button
+    const settingsBtn = document.getElementById('meeting-settings-btn');
+    settingsBtn.addEventListener('click', () => {
+      this.cycleMeetingCapacity();
+    });
+  }
+
+  tryJoinMeeting(roomId, toCol, toRow) {
+    this._pendingMeetingTeleport = { roomId, toCol, toRow };
+    socketManager.joinMeeting(roomId);
+  }
+
+  leaveMeetingRoom(returnToLobby) {
+    if (!this.currentMeetingRoom) return;
+    socketManager.leaveMeeting(this.currentMeetingRoom);
+    this.currentMeetingRoom = null;
+    this.meetingRoomPlayers = new Set();
+    if (returnToLobby) {
+      // Return to lobby — zoom camera to lobby bounds instead of full office
+      this.currentRoom = 'lobby-reuniones';
+      this._setRoomCameraBounds('lobby-reuniones');
+    } else {
+      // Restore full map camera bounds, zoom, and follow
+      this.currentRoom = null;
+      this._restoreCamera();
+    }
+    // Hide meeting UI
+    document.getElementById('fullcam-btn').classList.add('fullcam-hidden');
+    document.getElementById('meeting-capacity-wrapper').classList.add('meeting-btn-hidden');
+    // Auto-minimize if in fullcam mode
+    if (this.isFullCamMode) {
+      this.toggleFullCam();
+    }
+    this.updateProximityVideo();
+  }
+
+  _setMeetingCameraBounds(roomId) {
+    const rooms = {
+      'meet-1': { col: 0, row: 31, w: 6, h: 6 },
+      'meet-2': { col: 8, row: 25, w: 8, h: 6 },
+      'meet-3': { col: 18, row: 31, w: 6, h: 6 },
+    };
+    this._zoomToRoom(rooms[roomId]);
+  }
+
+  _setRoomCameraBounds(roomId) {
+    const rooms = {
+      'secret': { col: 8, row: 17, w: 6, h: 6 },
+      'bath-women': { col: 22, row: 17, w: 7, h: 7 },
+      'bath-men': { col: 30, row: 17, w: 7, h: 7 },
+      'lobby-reuniones': { col: 6, row: 31, w: 12, h: 8 },
+    };
+    this._zoomToRoom(rooms[roomId]);
+  }
+
+  _zoomToRoom(r) {
+    if (!r) return;
+    const cam = this.cameras.main;
+    const viewW = cam.width;
+    const viewH = cam.height;
+    const viewAspect = viewW / viewH;
+    const roomW = r.w * TILE;
+    const roomH = r.h * TILE;
+    const roomAspect = roomW / roomH;
+
+    // Expand bounds to match viewport aspect ratio (centered on room)
+    let boundsW, boundsH;
+    if (roomAspect < viewAspect) {
+      // Room is narrower than viewport — expand width
+      boundsH = roomH;
+      boundsW = roomH * viewAspect;
+    } else {
+      // Room is wider — expand height
+      boundsW = roomW;
+      boundsH = roomW / viewAspect;
+    }
+
+    const centerX = (r.col + r.w / 2) * TILE;
+    const centerY = (r.row + r.h / 2) * TILE;
+    const zoom = viewH / boundsH;
+
+    cam.stopFollow();
+    cam.setZoom(zoom);
+    cam.setBounds(
+      centerX - boundsW / 2, centerY - boundsH / 2,
+      boundsW, boundsH
+    );
+    cam.centerOn(centerX, centerY);
+  }
+
+  _restoreCamera() {
+    const localSprite = this.players.get(this.localId);
+    this.cameras.main.setZoom(1);
+    // Restrict camera to office area (rows 0-15) so hidden rooms below aren't visible
+    this.cameras.main.setBounds(0, 0, MAP_COLS * TILE, 16 * TILE);
+    if (localSprite) {
+      this.cameras.main.startFollow(localSprite, true, 0.15, 0.15);
+    }
+  }
+
+  _updateMeetingUI(owner, maxCapacity, playerIds) {
+    const fullcamBtn = document.getElementById('fullcam-btn');
+    const wrapper = document.getElementById('meeting-capacity-wrapper');
+    const settingsBtn = document.getElementById('meeting-settings-btn');
+    fullcamBtn.classList.remove('fullcam-hidden');
+    if (owner === this.localId) {
+      wrapper.classList.remove('meeting-btn-hidden');
+      settingsBtn.textContent = `${maxCapacity}/5`;
+    } else {
+      wrapper.classList.add('meeting-btn-hidden');
+    }
+  }
+
+  _showMeetingFullMessage() {
+    const localSprite = this.players.get(this.localId);
+    if (!localSprite) return;
+    const container = this._getOverlayContainer();
+    const el = document.createElement('div');
+    el.textContent = 'Sala llena';
+    el.style.cssText = 'position:absolute;transform:translate(-50%,-100%);background:rgba(220,20,60,0.9);color:#fff;font:bold 12px Arial,sans-serif;padding:6px 12px;border-radius:6px;pointer-events:none;z-index:9999;';
+    container.appendChild(el);
+    const pos = this._worldToScreen(localSprite.x, localSprite.y - TILE);
+    el.style.left = pos.x + 'px';
+    el.style.top = pos.y + 'px';
+    this.time.delayedCall(2000, () => el.remove());
+  }
+
+  toggleFullCam() {
+    const panel = document.getElementById('cam-panel');
+    const btn = document.getElementById('fullcam-btn');
+    if (this.isFullCamMode) {
+      panel.classList.remove('fullcam-mode');
+      btn.textContent = 'Pantalla completa';
+      this.isFullCamMode = false;
+      // Remove hint if present
+      const hint = document.getElementById('fullcam-hint');
+      if (hint) hint.remove();
+    } else {
+      // If camera is off, show hint instead of expanding
+      if (!webRTCManager.cameraOn) {
+        this._showFullCamHint();
+        return;
+      }
+      panel.classList.add('fullcam-mode');
+      btn.textContent = 'Minimizar camara';
+      this.isFullCamMode = true;
+    }
+  }
+
+  _showFullCamHint() {
+    // Remove previous hint if any
+    const existing = document.getElementById('fullcam-hint');
+    if (existing) existing.remove();
+    const hint = document.createElement('div');
+    hint.id = 'fullcam-hint';
+    hint.textContent = 'Clic arriba a la izquierda en "Abrir cam" asi ven tu camara';
+    hint.style.cssText = 'position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:rgba(245,166,35,0.95);color:#1a1a2e;font:bold 12px Arial,sans-serif;padding:10px 18px;border-radius:8px;z-index:10003;pointer-events:none;text-align:center;max-width:340px;box-shadow:0 2px 12px rgba(0,0,0,0.4);';
+    document.body.appendChild(hint);
+    this.time.delayedCall(4000, () => hint.remove());
+  }
+
+  cycleMeetingCapacity() {
+    if (!this.currentMeetingRoom) return;
+    const settingsBtn = document.getElementById('meeting-settings-btn');
+    const currentText = settingsBtn.textContent;
+    const currentMax = parseInt(currentText.split('/')[0], 10) || 2;
+    const nextMax = currentMax >= 5 ? 2 : currentMax + 1;
+    socketManager.setMeetingCapacity(this.currentMeetingRoom, nextMax);
   }
 
   animateWorkers() {

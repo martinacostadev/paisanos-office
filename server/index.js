@@ -19,15 +19,19 @@ const SHIRT_COLORS = [
   0x33aa66, 0xdd4466, 0x5577cc, 0xaa55cc, 0x44aaaa,
 ];
 
-// Safe spawn positions — center of the map first, then spreading out
+// Safe spawn positions — near left-wall entry door first, then spreading out
 const SPAWN_POSITIONS = [
+  { x: 1, y: 3 }, { x: 1, y: 4 },
+  { x: 2, y: 3 }, { x: 2, y: 4 },
+  { x: 3, y: 3 }, { x: 3, y: 4 },
+  { x: 1, y: 5 }, { x: 1, y: 6 },
   { x: 14, y: 3 }, { x: 14, y: 5 },
   { x: 12, y: 3 }, { x: 12, y: 5 },
   { x: 17, y: 3 }, { x: 17, y: 5 },
   { x: 19, y: 3 }, { x: 19, y: 5 },
   { x: 9, y: 3 }, { x: 9, y: 5 }, { x: 9, y: 9 },
   { x: 7, y: 7 }, { x: 7, y: 9 },
-  { x: 4, y: 3 }, { x: 4, y: 7 }, { x: 4, y: 11 },
+  { x: 4, y: 7 }, { x: 4, y: 11 },
   { x: 23, y: 3 }, { x: 24, y: 4 },
   { x: 30, y: 5 }, { x: 31, y: 7 }, { x: 33, y: 7 },
   { x: 35, y: 5 }, { x: 37, y: 7 }, { x: 38, y: 5 },
@@ -46,11 +50,22 @@ const SHIRT_STYLES = {
   'black-logo': 0x1a1a1a,
 };
 
-function randomColor(shirtStyle, hairStyle, hairColor) {
+function parseHexColor(str) {
+  if (!str) return null;
+  // Handle "0x1a1a1a" or "1a1a1a" formats
+  const n = Number(str);
+  if (!isNaN(n)) return n;
+  const clean = str.replace(/^0x/i, '');
+  const parsed = parseInt(clean, 16);
+  return isNaN(parsed) ? null : parsed;
+}
+
+function randomColor(shirtStyle, hairStyle, hairColor, skinColor) {
   const shirt = SHIRT_STYLES[shirtStyle] || pickRandom(SHIRT_COLORS);
-  const hair = hairColor ? parseInt(hairColor, 16) : pickRandom(HAIR_COLORS);
+  const hair = parseHexColor(hairColor) ?? pickRandom(HAIR_COLORS);
+  const skin = parseHexColor(skinColor) ?? pickRandom(SKIN_COLORS);
   return {
-    skin: pickRandom(SKIN_COLORS),
+    skin,
     hair,
     shirt,
     shirtStyle: shirtStyle || null,
@@ -58,35 +73,34 @@ function randomColor(shirtStyle, hairStyle, hairColor) {
   };
 }
 
-function findSpawnPosition(players) {
-  const occupied = new Set();
-  for (const p of players.values()) {
-    occupied.add(`${p.x},${p.y}`);
-  }
-  const available = SPAWN_POSITIONS.filter((s) => !occupied.has(`${s.x},${s.y}`));
-  if (available.length > 0) return pickRandom(available);
-  // Fallback: random walkable area
-  return { x: 9 + Math.floor(Math.random() * 10), y: 3 + Math.floor(Math.random() * 8) };
+function findSpawnPosition() {
+  // Always spawn at the entry door (top-left)
+  return { x: 1, y: 3 };
 }
 
 // Players map: socketId -> PlayerData
 const players = new Map();
 
+// Meeting rooms state
+const meetingRooms = new Map();
+meetingRooms.set('meet-1', { owner: null, maxCapacity: 2, players: new Set() });
+meetingRooms.set('meet-2', { owner: null, maxCapacity: 2, players: new Set() });
+meetingRooms.set('meet-3', { owner: null, maxCapacity: 2, players: new Set() });
+
 const MAP_COLS = 44;
-const MAP_ROWS = 32;
+const MAP_ROWS = 40;
 
 io.on('connection', (socket) => {
   console.log(`Connected: ${socket.id}`);
 
   socket.on('player:join', (data) => {
-    const color = randomColor(data.shirtStyle, data.hairStyle, data.hairColor);
+    const color = randomColor(data.shirtStyle, data.hairStyle, data.hairColor, data.skinColor);
     const pos = findSpawnPosition(players);
 
     const player = {
       id: socket.id,
-      name: data.name || 'Anonymous',
-      position: data.position || 'Team Member',
-      years: parseInt(data.years, 10) || 1,
+      name: data.name || 'Anónimo',
+      position: data.position || 'Miembro del equipo',
       color,
       x: pos.x,
       y: pos.y,
@@ -188,10 +202,98 @@ io.on('connection', (socket) => {
     });
   });
 
+  // --- Meeting rooms ---
+  socket.on('meeting:join', ({ roomId }) => {
+    const room = meetingRooms.get(roomId);
+    if (!room) return;
+    if (room.players.size >= room.maxCapacity) {
+      socket.emit('meeting:full', { roomId });
+      return;
+    }
+    room.players.add(socket.id);
+    if (!room.owner) room.owner = socket.id;
+    const payload = {
+      roomId,
+      owner: room.owner,
+      maxCapacity: room.maxCapacity,
+      playerIds: Array.from(room.players),
+    };
+    // Notify all room members
+    for (const pid of room.players) {
+      io.to(pid).emit('meeting:updated', payload);
+    }
+  });
+
+  socket.on('meeting:leave', ({ roomId }) => {
+    const room = meetingRooms.get(roomId);
+    if (!room) return;
+    room.players.delete(socket.id);
+    if (room.players.size === 0) {
+      room.owner = null;
+      room.maxCapacity = 2;
+    } else if (room.owner === socket.id) {
+      room.owner = room.players.values().next().value;
+    }
+    // Notify leaving player
+    socket.emit('meeting:updated', { roomId, owner: room.owner, maxCapacity: room.maxCapacity, playerIds: Array.from(room.players) });
+    // Notify remaining members
+    if (room.players.size > 0) {
+      const payload = {
+        roomId,
+        owner: room.owner,
+        maxCapacity: room.maxCapacity,
+        playerIds: Array.from(room.players),
+      };
+      for (const pid of room.players) {
+        io.to(pid).emit('meeting:updated', payload);
+      }
+    }
+  });
+
+  socket.on('meeting:setCapacity', ({ roomId, maxCapacity }) => {
+    const room = meetingRooms.get(roomId);
+    if (!room) return;
+    if (room.owner !== socket.id) return;
+    const cap = Math.max(2, Math.min(5, parseInt(maxCapacity, 10)));
+    room.maxCapacity = cap;
+    const payload = {
+      roomId,
+      owner: room.owner,
+      maxCapacity: room.maxCapacity,
+      playerIds: Array.from(room.players),
+    };
+    for (const pid of room.players) {
+      io.to(pid).emit('meeting:updated', payload);
+    }
+  });
+
   socket.on('disconnect', () => {
     const player = players.get(socket.id);
     if (player) {
       console.log(`Left: ${player.name} (${socket.id})`);
+      // Auto-leave any meeting room
+      for (const [roomId, room] of meetingRooms) {
+        if (room.players.has(socket.id)) {
+          room.players.delete(socket.id);
+          if (room.players.size === 0) {
+            room.owner = null;
+            room.maxCapacity = 2;
+          } else if (room.owner === socket.id) {
+            room.owner = room.players.values().next().value;
+          }
+          if (room.players.size > 0) {
+            const payload = {
+              roomId,
+              owner: room.owner,
+              maxCapacity: room.maxCapacity,
+              playerIds: Array.from(room.players),
+            };
+            for (const pid of room.players) {
+              io.to(pid).emit('meeting:updated', payload);
+            }
+          }
+        }
+      }
       players.delete(socket.id);
       io.emit('player:left', { id: socket.id });
     }

@@ -78,11 +78,39 @@ body {
   border-radius: 12px;
   padding: 32px 36px;
   min-width: 320px;
-  max-width: 380px;
+  max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
   text-align: center;
   box-shadow: 0 0 40px rgba(245, 166, 35, 0.3), 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+#join-layout {
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+  text-align: left;
+}
+
+#join-fields {
+  flex: 1;
+  min-width: 0;
+}
+
+#join-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 16px;
+}
+
+#avatar-preview {
+  image-rendering: pixelated;
+  border: 2px solid #f5a623;
+  border-radius: 8px;
+  background: #2a2a4a;
+  box-shadow: 0 0 12px rgba(245, 166, 35, 0.2);
 }
 
 #join-form-card h2 {
@@ -211,6 +239,33 @@ body {
   box-shadow: 0 0 8px rgba(245, 166, 35, 0.5);
 }
 
+#skin-color-picker {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.skin-color-option {
+  width: 36px;
+  height: 36px;
+  border: 2px solid #555;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.1s;
+}
+
+.skin-color-option:hover {
+  transform: scale(1.1);
+}
+
+.skin-color-option.selected {
+  border-color: #f5a623;
+  box-shadow: 0 0 8px rgba(245, 166, 35, 0.5);
+}
+
 #join-btn {
   display: block;
   width: 100%;
@@ -313,7 +368,7 @@ body {
 #mic-toggle-btn {
   position: fixed;
   top: 16px;
-  left: 140px;
+  left: 165px;
   z-index: 9998;
   font-family: 'Press Start 2P', cursive;
   font-size: 9px;
@@ -348,7 +403,7 @@ body {
 
 #cam-panel {
   position: fixed;
-  top: 52px;
+  top: 58px;
   left: 16px;
   z-index: 9998;
   display: flex;
@@ -362,8 +417,8 @@ body {
 
 .cam-box {
   position: relative;
-  width: 160px;
-  height: 120px;
+  width: 240px;
+  height: 180px;
   border: 3px solid #f5a623;
   border-radius: 8px;
   overflow: hidden;
@@ -703,6 +758,107 @@ body {
   transform: scale(0.95);
 }
 
+/* === Full Cam Button === */
+#fullcam-btn {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10002;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  padding: 10px 16px;
+  color: #1a1a2e;
+  background: #7ec8e3;
+  border: 2px solid #5aa8c3;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+  letter-spacing: 1px;
+}
+
+#fullcam-btn:hover {
+  background: #a0daf0;
+}
+
+#fullcam-btn.fullcam-hidden {
+  display: none;
+}
+
+/* === Meeting Capacity Wrapper === */
+#meeting-capacity-wrapper {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(calc(-50% + 160px));
+  z-index: 10002;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+#meeting-capacity-wrapper.meeting-btn-hidden {
+  display: none;
+}
+
+#meeting-capacity-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  color: #f5a623;
+  text-shadow: 1px 1px 2px #000;
+}
+
+#meeting-settings-btn {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  padding: 10px 16px;
+  color: #1a1a2e;
+  background: #f5a623;
+  border: 2px solid #c47d10;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+  letter-spacing: 1px;
+}
+
+#meeting-settings-btn:hover {
+  background: #ffc04d;
+}
+
+/* === Full Cam Mode === */
+#cam-panel.fullcam-mode {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: auto;
+  max-width: 95vw;
+  max-height: 90vh;
+  z-index: 10001;
+  background: rgba(10, 10, 26, 0.95);
+  border: 3px solid #f5a623;
+  border-radius: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  overflow: auto;
+}
+
+#cam-panel.fullcam-mode .cam-box {
+  width: 480px;
+  height: 360px;
+  min-height: unset;
+}
+
+#cam-panel.fullcam-mode #cam-remote-container {
+  display: contents;
+}
+
+
 /* === D-Pad Controls === */
 #dpad-controls {
   display: none;
@@ -753,6 +909,19 @@ body {
 
 /* === Mobile Responsive === */
 @media (max-width: 768px) {
+  #join-layout {
+    flex-direction: column;
+  }
+
+  #join-preview {
+    order: -1;
+  }
+
+  #avatar-preview {
+    width: 80px !important;
+    height: 80px !important;
+  }
+
   #dpad-controls {
     display: flex;
     bottom: 100px;
@@ -795,6 +964,32 @@ body {
     padding: 6px 10px;
     top: 46px;
     left: 16px;
+  }
+
+  #fullcam-btn {
+    font-size: 7px;
+    padding: 6px 10px;
+    bottom: 16px;
+  }
+
+  #meeting-capacity-wrapper {
+    bottom: 16px;
+    transform: translateX(calc(-50% + 120px));
+  }
+
+  #meeting-settings-btn {
+    font-size: 7px;
+    padding: 6px 10px;
+  }
+
+  #cam-panel.fullcam-mode {
+    max-width: 98vw;
+    max-height: 90vh;
+  }
+
+  #cam-panel.fullcam-mode .cam-box {
+    width: 280px;
+    height: 210px;
   }
 
   .cam-box {

@@ -268,6 +268,70 @@ export default class BootScene extends Phaser.Scene {
       g.fillRect(7, 8, 2, 1);
     });
 
+    // Guitar leaning against wall
+    this.createTile('guitar', (g) => {
+      // Floor
+      g.fillStyle(0x8a8078);
+      g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0x7d756d);
+      g.fillRect(0, 0, TILE, 1);
+      g.fillRect(0, 10, TILE, 1);
+      // Neck
+      g.fillStyle(0x8b6b4a);
+      g.fillRect(7, 0, 2, 9);
+      // Tuning pegs
+      g.fillStyle(0xcccccc);
+      g.fillRect(6, 0, 1, 1);
+      g.fillRect(9, 0, 1, 1);
+      g.fillRect(6, 2, 1, 1);
+      g.fillRect(9, 2, 1, 1);
+      // Frets
+      g.fillStyle(0xa07850);
+      g.fillRect(7, 3, 2, 1);
+      g.fillRect(7, 5, 2, 1);
+      g.fillRect(7, 7, 2, 1);
+      // Body
+      g.fillStyle(0xcc6633);
+      g.fillRect(4, 9, 8, 6);
+      g.fillStyle(0xdd7744);
+      g.fillRect(5, 10, 6, 4);
+      // Sound hole
+      g.fillStyle(0x442211);
+      g.fillRect(6, 11, 4, 2);
+      g.fillStyle(0x331a0a);
+      g.fillRect(7, 11, 2, 2);
+      // Strings
+      g.fillStyle(0xdddddd);
+      g.fillRect(7, 3, 1, 10);
+      g.fillRect(8, 3, 1, 10);
+    });
+
+    // Musical notes floating near guitar
+    this.createTile('musical-notes', (g) => {
+      // Floor base
+      g.fillStyle(0x8a8078);
+      g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0x7d756d);
+      g.fillRect(0, 0, TILE, 1);
+      g.fillRect(0, 10, TILE, 1);
+      // Note 1 (eighth note) - top left
+      g.fillStyle(0x333333);
+      g.fillRect(3, 2, 1, 5);   // stem
+      g.fillRect(2, 6, 2, 2);   // head
+      g.fillRect(3, 2, 2, 1);   // flag
+      g.fillRect(4, 3, 1, 1);
+      // Note 2 (quarter note) - middle right
+      g.fillStyle(0x555555);
+      g.fillRect(10, 5, 1, 4);  // stem
+      g.fillRect(9, 8, 2, 2);   // head
+      // Note 3 (eighth note) - bottom left
+      g.fillStyle(0x444444);
+      g.fillRect(5, 9, 1, 4);   // stem
+      g.fillRect(4, 12, 2, 2);  // head
+      g.fillRect(5, 9, 2, 1);   // flag
+      g.fillRect(6, 10, 1, 1);
+    });
+
     // Ceiling light/lamp (industrial pendant)
     this.createTile('ceiling-light', (g) => {
       // Dark ceiling
@@ -1156,11 +1220,6 @@ export default class BootScene extends Phaser.Scene {
       g.fillRect(2, 2, 12, 14);
       g.fillStyle(0xa07850);
       g.fillRect(3, 3, 10, 12);
-      // Arrow pointing up (exit)
-      g.fillStyle(0x44dd66);
-      g.fillRect(7, 4, 2, 7);
-      g.fillRect(5, 6, 2, 2);
-      g.fillRect(9, 6, 2, 2);
       // Handle
       g.fillStyle(0xcccccc);
       g.fillRect(10, 9, 2, 2);
@@ -1461,6 +1520,375 @@ export default class BootScene extends Phaser.Scene {
       g.fillRect(4, 3, 2, 3);
       g.fillRect(8, 2, 2, 3);
       g.fillRect(7, 5, 2, 2);
+    });
+
+    // Meeting room door 1
+    this.createTile('meeting-door-1', (g) => {
+      // Wall frame
+      g.fillStyle(0x222a28);
+      g.fillRect(0, 0, TILE, TILE);
+      // Door
+      g.fillStyle(0x5a4a3a);
+      g.fillRect(2, 2, 12, 14);
+      g.fillStyle(0x6b5a48);
+      g.fillRect(3, 3, 10, 12);
+      // "1" label
+      g.fillStyle(0xf5a623);
+      g.fillRect(7, 4, 2, 1);
+      g.fillRect(6, 5, 1, 1);
+      g.fillRect(7, 5, 2, 6);
+      g.fillRect(5, 11, 6, 1);
+      // Handle
+      g.fillStyle(0xcccccc);
+      g.fillRect(10, 8, 2, 2);
+    });
+
+    // Meeting room door 2
+    this.createTile('meeting-door-2', (g) => {
+      // Wall frame
+      g.fillStyle(0x222a28);
+      g.fillRect(0, 0, TILE, TILE);
+      // Door
+      g.fillStyle(0x5a4a3a);
+      g.fillRect(2, 2, 12, 14);
+      g.fillStyle(0x6b5a48);
+      g.fillRect(3, 3, 10, 12);
+      // "2" label
+      g.fillStyle(0xf5a623);
+      g.fillRect(5, 4, 6, 1);
+      g.fillRect(9, 5, 2, 2);
+      g.fillRect(5, 7, 6, 1);
+      g.fillRect(5, 8, 2, 2);
+      g.fillRect(5, 10, 6, 1);
+      // Handle
+      g.fillStyle(0xcccccc);
+      g.fillRect(10, 8, 2, 2);
+    });
+
+    // Meeting floor (dark carpet)
+    this.createTile('meeting-floor', (g) => {
+      g.fillStyle(0x2a2a3e);
+      g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0x323248);
+      g.fillRect(1, 1, 6, 6);
+      g.fillRect(8, 8, 7, 7);
+      g.fillStyle(0x262638);
+      g.fillRect(0, 7, TILE, 1);
+      g.fillRect(7, 0, 1, TILE);
+    });
+
+    // Conference table
+    this.createTile('conference-table', (g) => {
+      // Meeting floor base
+      g.fillStyle(0x2a2a3e);
+      g.fillRect(0, 0, TILE, TILE);
+      // Table surface (dark polished wood)
+      g.fillStyle(0x5c3d2e);
+      g.fillRect(1, 1, 14, 14);
+      g.fillStyle(0x6b4a38);
+      g.fillRect(2, 2, 12, 12);
+      // Wood grain
+      g.fillStyle(0x5c3d2e);
+      g.fillRect(2, 5, 12, 1);
+      g.fillRect(2, 9, 12, 1);
+      // Reflection
+      g.fillStyle(0x7a5a48);
+      g.fillRect(4, 3, 4, 2);
+    });
+
+    // Concrete bench — horizontal (sits along top/bottom edges)
+    this.createTile('concrete-bench-h', (g) => {
+      // Base — concrete slab
+      g.fillStyle(0x888888);
+      g.fillRect(0, 4, 16, 8);
+      // Top surface — lighter
+      g.fillStyle(0x999999);
+      g.fillRect(0, 4, 16, 3);
+      // Highlight edge
+      g.fillStyle(0xaaaaaa);
+      g.fillRect(0, 4, 16, 1);
+      // Shadow
+      g.fillStyle(0x666666);
+      g.fillRect(0, 11, 16, 1);
+      // Legs
+      g.fillStyle(0x777777);
+      g.fillRect(1, 12, 3, 3);
+      g.fillRect(12, 12, 3, 3);
+    });
+
+    // Concrete bench — vertical (sits along left/right edges)
+    this.createTile('concrete-bench-v', (g) => {
+      // Base — concrete slab
+      g.fillStyle(0x888888);
+      g.fillRect(4, 0, 8, 16);
+      // Left surface — lighter
+      g.fillStyle(0x999999);
+      g.fillRect(4, 0, 3, 16);
+      // Highlight edge
+      g.fillStyle(0xaaaaaa);
+      g.fillRect(4, 0, 1, 16);
+      // Shadow
+      g.fillStyle(0x666666);
+      g.fillRect(11, 0, 1, 16);
+      // Legs
+      g.fillStyle(0x777777);
+      g.fillRect(12, 1, 3, 3);
+      g.fillRect(12, 12, 3, 3);
+    });
+
+    // Double entry door
+    this.createTile('entry-door', (g) => {
+      // Wall frame
+      g.fillStyle(0x2a3330);
+      g.fillRect(0, 0, TILE, TILE);
+      // Door panels
+      g.fillStyle(0x5a4a3a);
+      g.fillRect(1, 1, 6, 14);
+      g.fillRect(9, 1, 6, 14);
+      // Door surface
+      g.fillStyle(0x7a6a58);
+      g.fillRect(2, 2, 4, 12);
+      g.fillRect(10, 2, 4, 12);
+      // Windows on doors
+      g.fillStyle(0x88ccee);
+      g.fillRect(3, 3, 2, 4);
+      g.fillRect(11, 3, 2, 4);
+      // Handles
+      g.fillStyle(0xcccccc);
+      g.fillRect(5, 8, 1, 2);
+      g.fillRect(10, 8, 1, 2);
+    });
+
+    // Whiteboard (wall decoration for meeting rooms)
+    this.createTile('whiteboard', (g) => {
+      // Dark wall background
+      g.fillStyle(0x2a3330);
+      g.fillRect(0, 0, TILE, TILE);
+      // Board frame
+      g.fillStyle(0x888888);
+      g.fillRect(1, 2, 14, 11);
+      // White surface
+      g.fillStyle(0xf0f0f0);
+      g.fillRect(2, 3, 12, 9);
+      // Some "writing" lines
+      g.fillStyle(0x3366cc);
+      g.fillRect(3, 5, 8, 1);
+      g.fillStyle(0xcc3333);
+      g.fillRect(3, 7, 6, 1);
+      g.fillStyle(0x33aa55);
+      g.fillRect(3, 9, 9, 1);
+      // Marker tray
+      g.fillStyle(0x666666);
+      g.fillRect(2, 12, 12, 1);
+    });
+
+    // Wall clock (wall decoration)
+    this.createTile('wall-clock', (g) => {
+      // Dark wall background
+      g.fillStyle(0x2a3330);
+      g.fillRect(0, 0, TILE, TILE);
+      // Clock body
+      g.fillStyle(0x333333);
+      g.fillRect(4, 3, 8, 8);
+      // Clock face
+      g.fillStyle(0xeeeeee);
+      g.fillRect(5, 4, 6, 6);
+      // Hour marks
+      g.fillStyle(0x222222);
+      g.fillRect(8, 4, 1, 1); // 12
+      g.fillRect(10, 7, 1, 1); // 3
+      g.fillRect(8, 9, 1, 1); // 6
+      g.fillRect(5, 7, 1, 1); // 9
+      // Hands
+      g.fillStyle(0x111111);
+      g.fillRect(8, 5, 1, 3); // hour hand (pointing up)
+      g.fillStyle(0xcc0000);
+      g.fillRect(8, 7, 2, 1); // minute hand (pointing right)
+    });
+
+    // Wall painting / poster (wall decoration)
+    this.createTile('wall-painting', (g) => {
+      // Dark wall background
+      g.fillStyle(0x2a3330);
+      g.fillRect(0, 0, TILE, TILE);
+      // Frame
+      g.fillStyle(0x8b6b4a);
+      g.fillRect(2, 2, 12, 10);
+      // Canvas
+      g.fillStyle(0x1a3a5a);
+      g.fillRect(3, 3, 10, 8);
+      // Abstract mountain landscape
+      g.fillStyle(0x4488aa);
+      g.fillRect(3, 7, 10, 4); // water
+      g.fillStyle(0x557766);
+      g.fillRect(4, 5, 3, 4); // mountain 1
+      g.fillRect(8, 4, 4, 5); // mountain 2
+      g.fillStyle(0xeedd44);
+      g.fillRect(10, 3, 2, 2); // sun
+    });
+
+    // Wall sign "REUS" — single tile with gold text on dark sign board
+    this.createTile('reus-sign', (g) => {
+      // Dark wall background
+      g.fillStyle(0x222a28);
+      g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0x2a3330);
+      g.fillRect(0, TILE - 4, TILE, 4);
+      // Sign board
+      g.fillStyle(0x1a1a1a);
+      g.fillRect(0, 3, TILE, 10);
+      g.fillStyle(0x222222);
+      g.fillRect(0, 4, TILE, 8);
+      // Gold border top/bottom
+      g.fillStyle(0xf5a623);
+      g.fillRect(0, 3, TILE, 1);
+      g.fillRect(0, 12, TILE, 1);
+      // "REUS" in gold pixels
+      g.fillStyle(0xf5a623);
+      // R (x=1)
+      g.fillRect(1, 5, 1, 6);
+      g.fillRect(2, 5, 2, 1);
+      g.fillRect(3, 6, 1, 1);
+      g.fillRect(2, 7, 2, 1);
+      g.fillRect(3, 8, 1, 3);
+      // E (x=5)
+      g.fillRect(5, 5, 1, 6);
+      g.fillRect(6, 5, 2, 1);
+      g.fillRect(6, 7, 2, 1);
+      g.fillRect(6, 10, 2, 1);
+      // U (x=9)
+      g.fillRect(9, 5, 1, 6);
+      g.fillRect(11, 5, 1, 6);
+      g.fillRect(10, 10, 1, 1);
+      // S (x=13)
+      g.fillRect(13, 5, 2, 1);
+      g.fillRect(13, 6, 1, 1);
+      g.fillRect(13, 7, 2, 1);
+      g.fillRect(14, 8, 1, 2);
+      g.fillRect(13, 10, 2, 1);
+    });
+
+    // "REUNIONES" main door (replaces door-1 and door-2 on office top wall)
+    this.createTile('reuniones-door', (g) => {
+      // Wall frame
+      g.fillStyle(0x222a28);
+      g.fillRect(0, 0, TILE, TILE);
+      // Door
+      g.fillStyle(0x5a4a3a);
+      g.fillRect(2, 2, 12, 14);
+      g.fillStyle(0x6b5a48);
+      g.fillRect(3, 3, 10, 12);
+      // "R" label in gold
+      g.fillStyle(0xf5a623);
+      g.fillRect(5, 4, 4, 1);
+      g.fillRect(5, 5, 1, 6);
+      g.fillRect(8, 5, 1, 2);
+      g.fillRect(5, 7, 4, 1);
+      g.fillRect(7, 8, 1, 1);
+      g.fillRect(8, 9, 1, 2);
+      // Handle
+      g.fillStyle(0xcccccc);
+      g.fillRect(10, 8, 2, 2);
+    });
+
+    // Meeting door 3 (with "3" label)
+    this.createTile('meeting-door-3', (g) => {
+      // Wall frame
+      g.fillStyle(0x222a28);
+      g.fillRect(0, 0, TILE, TILE);
+      // Door
+      g.fillStyle(0x5a4a3a);
+      g.fillRect(2, 2, 12, 14);
+      g.fillStyle(0x6b5a48);
+      g.fillRect(3, 3, 10, 12);
+      // "3" label
+      g.fillStyle(0xf5a623);
+      g.fillRect(5, 4, 6, 1);
+      g.fillRect(9, 5, 2, 2);
+      g.fillRect(5, 7, 6, 1);
+      g.fillRect(9, 8, 2, 2);
+      g.fillRect(5, 10, 6, 1);
+      // Handle
+      g.fillStyle(0xcccccc);
+      g.fillRect(10, 8, 2, 2);
+    });
+
+    // Lobby floor (slightly lighter carpet than meeting rooms)
+    this.createTile('lobby-floor', (g) => {
+      g.fillStyle(0x34344e);
+      g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0x3c3c58);
+      g.fillRect(1, 1, 6, 6);
+      g.fillRect(8, 8, 7, 7);
+      g.fillStyle(0x2e2e48);
+      g.fillRect(0, 7, TILE, 1);
+      g.fillRect(7, 0, 1, TILE);
+    });
+
+    // "VOLVER" wall sign tile (green text on dark wall)
+    this.createTile('volver-sign', (g) => {
+      // Dark wall background
+      g.fillStyle(0x2a3330);
+      g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0x323b38);
+      g.fillRect(1, 1, TILE - 2, TILE - 2);
+      // Sign board
+      g.fillStyle(0x1a1a1a);
+      g.fillRect(0, 4, TILE, 9);
+      g.fillStyle(0x222222);
+      g.fillRect(0, 5, TILE, 7);
+      // Green border
+      g.fillStyle(0x44dd66);
+      g.fillRect(0, 4, TILE, 1);
+      g.fillRect(0, 12, TILE, 1);
+      // "VOLVER" in green pixels (compact)
+      g.fillStyle(0x44dd66);
+      // V
+      g.fillRect(1, 6, 1, 3);
+      g.fillRect(3, 6, 1, 3);
+      g.fillRect(2, 9, 1, 1);
+      // O
+      g.fillRect(5, 6, 1, 4);
+      g.fillRect(7, 6, 1, 4);
+      g.fillRect(6, 6, 1, 1);
+      g.fillRect(6, 9, 1, 1);
+      // L
+      g.fillRect(9, 6, 1, 4);
+      g.fillRect(10, 9, 1, 1);
+      // Arrow down
+      g.fillRect(13, 6, 1, 3);
+      g.fillRect(12, 9, 3, 1);
+      g.fillRect(13, 10, 1, 1);
+    });
+
+    // Lobby exit door (back to office — no green arrow)
+    this.createTile('lobby-exit-door', (g) => {
+      // Wall frame
+      g.fillStyle(0x2a3330);
+      g.fillRect(0, 0, TILE, TILE);
+      // Door
+      g.fillStyle(0x5a4a3a);
+      g.fillRect(2, 2, 12, 14);
+      g.fillStyle(0x6b5a48);
+      g.fillRect(3, 3, 10, 12);
+      // Handle
+      g.fillStyle(0xcccccc);
+      g.fillRect(10, 7, 2, 2);
+    });
+
+    // Meeting return door (no green arrow)
+    this.createTile('meeting-return-door', (g) => {
+      // Wall frame
+      g.fillStyle(0x2a3330);
+      g.fillRect(0, 0, TILE, TILE);
+      // Door
+      g.fillStyle(0x5a4a3a);
+      g.fillRect(2, 2, 12, 14);
+      g.fillStyle(0x6b5a48);
+      g.fillRect(3, 3, 10, 12);
+      // Handle
+      g.fillStyle(0xcccccc);
+      g.fillRect(10, 9, 2, 2);
     });
   }
 

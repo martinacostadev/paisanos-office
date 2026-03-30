@@ -68,6 +68,22 @@ class SocketManager {
     this.socket.emit('chat:send', { message });
   }
 
+  // Meeting rooms
+  joinMeeting(roomId) {
+    if (!this.socket) return;
+    this.socket.emit('meeting:join', { roomId });
+  }
+
+  leaveMeeting(roomId) {
+    if (!this.socket) return;
+    this.socket.emit('meeting:leave', { roomId });
+  }
+
+  setMeetingCapacity(roomId, maxCapacity) {
+    if (!this.socket) return;
+    this.socket.emit('meeting:setCapacity', { roomId, maxCapacity });
+  }
+
   on(event, callback) {
     if (!this.socket) return;
     this.socket.on(event, callback);
