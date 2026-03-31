@@ -124,6 +124,9 @@ export default class OfficeScene extends Phaser.Scene {
     // Chat setup
     this.setupChat();
 
+    // BBQ game setup
+    this.setupBBQ();
+
     // Toilet game setup
     this.setupToiletGame();
 
@@ -1185,7 +1188,7 @@ export default class OfficeScene extends Phaser.Scene {
     if (!localSprite) return;
 
     // Block movement while overlays are open
-    if (this.arcadeOpen || this.tvOpen || this.guitarOpen || this.toiletOpen) return;
+    if (this.arcadeOpen || this.tvOpen || this.guitarOpen || this.toiletOpen || this.bbqOpen) return;
 
     if (time - this.moveTimer < 150) return;
 
@@ -1241,6 +1244,9 @@ export default class OfficeScene extends Phaser.Scene {
 
     // Check chair sit / "EN REU" badge
     this.checkChairStatus(localSprite, newX, newY);
+
+    // Check BBQ proximity
+    this.checkBBQProximity(newX, newY);
 
     // Check toilet proximity
     this.checkToiletProximity(newX, newY);
@@ -1996,6 +2002,353 @@ export default class OfficeScene extends Phaser.Scene {
     const currentMax = parseInt(currentText.split('/')[0], 10) || 2;
     const nextMax = currentMax >= 5 ? 2 : currentMax + 1;
     socketManager.setMeetingCapacity(this.currentMeetingRoom, nextMax);
+  }
+
+  // --- BBQ game ---
+
+  setupBBQ() {
+    this.bbqOpen = false;
+    this.bbqNearby = false;
+    this._bbqAnimFrame = null;
+    this._bbqClickHandler = null;
+    this.bbqCols = [35, 36];
+    this.bbqRow = 2;
+    document.getElementById('bbq-close-btn').addEventListener('click', () => this.closeBBQ());
+  }
+
+  checkBBQProximity(px, py) {
+    if (this.bbqOpen || this.arcadeOpen || this.tvOpen || this.guitarOpen || this.toiletOpen) return;
+    let near = false;
+    for (const c of this.bbqCols) {
+      if (Math.max(Math.abs(px - c), Math.abs(py - this.bbqRow)) <= 1) { near = true; break; }
+    }
+    const wasNearby = this.bbqNearby;
+    this.bbqNearby = near;
+    if (near && !wasNearby) this.openBBQ();
+  }
+
+  openBBQ() {
+    this.bbqOpen = true;
+    this.input.keyboard.enabled = false;
+    this.input.keyboard.resetKeys();
+    document.getElementById('bbq-modal').classList.remove('bbq-modal-hidden');
+    this.runBBQGame();
+  }
+
+  closeBBQ() {
+    this.bbqOpen = false;
+    this.input.keyboard.enabled = true;
+    if (this._bbqAnimFrame) { cancelAnimationFrame(this._bbqAnimFrame); this._bbqAnimFrame = null; }
+    const canvas = document.getElementById('bbq-canvas');
+    if (this._bbqClickHandler) { canvas.removeEventListener('click', this._bbqClickHandler); this._bbqClickHandler = null; }
+    document.getElementById('bbq-modal').classList.add('bbq-modal-hidden');
+  }
+
+  runBBQGame() {
+    const canvas = document.getElementById('bbq-canvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
+    const scoreEl = document.getElementById('bbq-score');
+    const hintEl = document.getElementById('bbq-hint');
+
+    let score = 0;
+    let frame = 0;
+
+    // Meat pieces on the grill
+    const meats = [
+      { x: 60, y: 160, w: 70, h: 28, type: 'chori', cook: 0, flipped: false, burned: false, done: false },
+      { x: 170, y: 155, w: 75, h: 30, type: 'asado', cook: 0, flipped: false, burned: false, done: false },
+      { x: 290, y: 160, w: 65, h: 26, type: 'chori', cook: 0, flipped: false, burned: false, done: false },
+      { x: 100, y: 220, w: 80, h: 35, type: 'vacio', cook: 0, flipped: false, burned: false, done: false },
+      { x: 240, y: 225, w: 70, h: 30, type: 'asado', cook: 0, flipped: false, burned: false, done: false },
+      { x: 350, y: 218, w: 55, h: 24, type: 'chori', cook: 0, flipped: false, burned: false, done: false },
+    ];
+
+    // Fire particles
+    const fires = [];
+    // Smoke particles
+    const smokes = [];
+
+    const onClick = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) * (W / rect.width);
+      const my = (e.clientY - rect.top) * (H / rect.height);
+
+      for (const m of meats) {
+        if (m.done || m.burned) continue;
+        if (mx >= m.x - m.w / 2 && mx <= m.x + m.w / 2 &&
+            my >= m.y - m.h / 2 && my <= m.y + m.h / 2) {
+          if (!m.flipped && m.cook >= 80) {
+            // Perfect flip!
+            m.flipped = true;
+            m.cook = 0;
+            score += 50;
+            // Sizzle sparks
+            for (let i = 0; i < 8; i++) {
+              fires.push({
+                x: m.x + (Math.random() - 0.5) * m.w,
+                y: m.y,
+                dx: (Math.random() - 0.5) * 3,
+                dy: -Math.random() * 4 - 2,
+                life: 15,
+                color: '#ffdd44',
+              });
+            }
+          } else if (!m.flipped && m.cook >= 40) {
+            // Early flip — ok but not ideal
+            m.flipped = true;
+            m.cook = 0;
+            score += 20;
+          } else if (m.flipped && m.cook >= 80) {
+            // Done! Remove from grill
+            m.done = true;
+            score += 100;
+          } else if (m.flipped && m.cook >= 40) {
+            m.done = true;
+            score += 40;
+          }
+          break;
+        }
+      }
+    };
+    canvas.addEventListener('click', onClick);
+    this._bbqClickHandler = onClick;
+
+    const gameLoop = () => {
+      if (!this.bbqOpen) return;
+      frame++;
+
+      // Cook meats
+      meats.forEach((m) => {
+        if (m.done || m.burned) return;
+        m.cook += 0.4;
+        if (m.cook > 150) m.burned = true;
+      });
+
+      // Spawn fire particles from beneath the grill
+      if (frame % 2 === 0) {
+        const fx = 40 + Math.random() * (W - 80);
+        fires.push({
+          x: fx, y: 280 + Math.random() * 20,
+          dx: (Math.random() - 0.5) * 1.5,
+          dy: -Math.random() * 3 - 1.5,
+          life: 20 + Math.random() * 15,
+          color: Math.random() > 0.4 ? '#ff6622' : (Math.random() > 0.5 ? '#ffaa22' : '#ff3300'),
+        });
+      }
+
+      // Spawn smoke
+      if (frame % 4 === 0) {
+        smokes.push({
+          x: 60 + Math.random() * (W - 120),
+          y: 120 + Math.random() * 30,
+          dx: (Math.random() - 0.5) * 0.8,
+          dy: -Math.random() * 1.2 - 0.5,
+          r: 8 + Math.random() * 12,
+          life: 60 + Math.random() * 40,
+          maxLife: 100,
+        });
+      }
+
+      // Update particles
+      for (let i = fires.length - 1; i >= 0; i--) {
+        const f = fires[i];
+        f.x += f.dx; f.y += f.dy; f.life--;
+        if (f.life <= 0) fires.splice(i, 1);
+      }
+      for (let i = smokes.length - 1; i >= 0; i--) {
+        const s = smokes[i];
+        s.x += s.dx; s.y += s.dy; s.r += 0.3; s.life--;
+        if (s.life <= 0) smokes.splice(i, 1);
+      }
+
+      // --- Draw ---
+      // Background (dark, outdoor night)
+      ctx.fillStyle = '#1a1a2e';
+      ctx.fillRect(0, 0, W, H);
+
+      // Grill body (brick base)
+      ctx.fillStyle = '#5a3a2a';
+      ctx.fillRect(20, 270, W - 40, 90);
+      ctx.fillStyle = '#4a2a1a';
+      ctx.fillRect(25, 275, W - 50, 80);
+      // Brick lines
+      ctx.strokeStyle = '#3a1a0a';
+      ctx.lineWidth = 1;
+      for (let y = 280; y < 355; y += 15) {
+        ctx.beginPath(); ctx.moveTo(25, y); ctx.lineTo(W - 25, y); ctx.stroke();
+      }
+
+      // Fire glow under grill
+      const glowGrad = ctx.createRadialGradient(W / 2, 300, 20, W / 2, 300, 180);
+      glowGrad.addColorStop(0, 'rgba(255, 100, 0, 0.3)');
+      glowGrad.addColorStop(1, 'rgba(255, 50, 0, 0)');
+      ctx.fillStyle = glowGrad;
+      ctx.fillRect(0, 200, W, 180);
+
+      // Fire particles (behind grill grate)
+      fires.forEach((f) => {
+        ctx.globalAlpha = f.life / 35;
+        ctx.fillStyle = f.color;
+        const sz = 3 + (f.life / 35) * 5;
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, sz, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+
+      // Grill grate
+      ctx.fillStyle = '#333';
+      ctx.fillRect(30, 268, W - 60, 5);
+      // Grate bars
+      ctx.strokeStyle = '#444';
+      ctx.lineWidth = 2;
+      for (let x = 40; x < W - 40; x += 12) {
+        ctx.beginPath(); ctx.moveTo(x, 140); ctx.lineTo(x, 268); ctx.stroke();
+      }
+      // Cross bars
+      ctx.strokeStyle = '#3a3a3a';
+      ctx.lineWidth = 2;
+      [155, 185, 215, 245].forEach((y) => {
+        ctx.beginPath(); ctx.moveTo(35, y); ctx.lineTo(W - 35, y); ctx.stroke();
+      });
+
+      // Meats
+      meats.forEach((m) => {
+        if (m.done) return;
+        const cookPct = Math.min(m.cook / 150, 1);
+
+        // Color based on cooking state
+        let color;
+        if (m.burned) {
+          color = '#1a1a1a';
+        } else if (m.cook < 40) {
+          // Raw — pink/red
+          color = m.type === 'chori' ? '#d4826a' : '#cc6666';
+        } else if (m.cook < 80) {
+          // Cooking — browning
+          color = m.type === 'chori' ? '#b86040' : '#aa5533';
+        } else if (m.cook < 120) {
+          // Well done — dark brown
+          color = m.type === 'chori' ? '#8a4422' : '#884422';
+        } else {
+          // About to burn
+          color = '#553318';
+        }
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.beginPath();
+        ctx.ellipse(m.x + 2, m.y + m.h / 2 + 3, m.w / 2, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Meat body
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        if (m.type === 'chori') {
+          // Chorizo — rounded rectangle
+          ctx.roundRect(m.x - m.w / 2, m.y - m.h / 2, m.w, m.h, m.h / 2);
+        } else {
+          // Asado/vacio — irregular shape
+          ctx.roundRect(m.x - m.w / 2, m.y - m.h / 2, m.w, m.h, 5);
+        }
+        ctx.fill();
+
+        // Grill marks
+        if (m.cook > 30) {
+          ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+          ctx.lineWidth = 2;
+          const marks = m.type === 'chori' ? 3 : 4;
+          for (let i = 0; i < marks; i++) {
+            const mx = m.x - m.w / 3 + (i * m.w) / (marks + 0.5);
+            ctx.beginPath();
+            ctx.moveTo(mx, m.y - m.h / 2 + 3);
+            ctx.lineTo(mx, m.y + m.h / 2 - 3);
+            ctx.stroke();
+          }
+        }
+
+        // Fat sizzle sparks on hot meats
+        if (m.cook > 60 && m.cook < 130 && !m.burned && frame % 8 === 0) {
+          fires.push({
+            x: m.x + (Math.random() - 0.5) * m.w * 0.6,
+            y: m.y + m.h / 2,
+            dx: (Math.random() - 0.5) * 2,
+            dy: -Math.random() * 2 - 1,
+            life: 10,
+            color: '#ffee88',
+          });
+        }
+
+        // "Flip!" indicator when ready
+        if (!m.burned && !m.done) {
+          if ((!m.flipped && m.cook >= 80 && m.cook < 120) ||
+              (m.flipped && m.cook >= 80 && m.cook < 120)) {
+            ctx.fillStyle = '#00ff66';
+            ctx.font = 'bold 10px "Press Start 2P", monospace';
+            ctx.textAlign = 'center';
+            const label = m.flipped ? 'Listo!' : 'Dar vuelta!';
+            ctx.globalAlpha = 0.5 + 0.5 * Math.sin(frame * 0.15);
+            ctx.fillText(label, m.x, m.y - m.h / 2 - 8);
+            ctx.globalAlpha = 1;
+          }
+          if (m.cook > 120 && !m.burned) {
+            ctx.fillStyle = '#ff4444';
+            ctx.font = 'bold 9px "Press Start 2P", monospace';
+            ctx.textAlign = 'center';
+            ctx.globalAlpha = 0.5 + 0.5 * Math.sin(frame * 0.2);
+            ctx.fillText('Se quema!', m.x, m.y - m.h / 2 - 8);
+            ctx.globalAlpha = 1;
+          }
+        }
+
+        // Burned X
+        if (m.burned) {
+          ctx.strokeStyle = '#ff2222';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(m.x - 12, m.y - 12); ctx.lineTo(m.x + 12, m.y + 12);
+          ctx.moveTo(m.x + 12, m.y - 12); ctx.lineTo(m.x - 12, m.y + 12);
+          ctx.stroke();
+        }
+      });
+
+      // Smoke (on top of everything)
+      smokes.forEach((s) => {
+        ctx.globalAlpha = (s.life / s.maxLife) * 0.35;
+        ctx.fillStyle = '#aaa';
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+
+      // Score
+      const doneCount = meats.filter((m) => m.done).length;
+      const burnedCount = meats.filter((m) => m.burned).length;
+      scoreEl.textContent = `Puntaje: ${score}  |  Listas: ${doneCount}/${meats.length}  |  Quemadas: ${burnedCount}`;
+
+      // All done or burned
+      if (meats.every((m) => m.done || m.burned)) {
+        hintEl.textContent = burnedCount === 0 ? 'Asado perfecto!' : `${burnedCount} se quemaron...`;
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = burnedCount === 0 ? '#00ff66' : '#f5a623';
+        ctx.font = '18px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(burnedCount === 0 ? 'ASADO PERFECTO!' : 'FIN DEL ASADO', W / 2, H / 2 - 10);
+        ctx.fillStyle = '#fff';
+        ctx.font = '12px "Press Start 2P", monospace';
+        ctx.fillText(`Puntaje: ${score}`, W / 2, H / 2 + 20);
+        return;
+      }
+
+      hintEl.textContent = 'Click en la carne para darla vuelta!';
+      this._bbqAnimFrame = requestAnimationFrame(gameLoop);
+    };
+
+    this._bbqAnimFrame = requestAnimationFrame(gameLoop);
   }
 
   // --- Toilet game ---

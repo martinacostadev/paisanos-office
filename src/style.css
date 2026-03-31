@@ -1010,6 +1010,69 @@ body {
   }
 }
 
+/* --- BBQ game modal --- */
+#bbq-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10010;
+}
+#bbq-modal.bbq-modal-hidden {
+  display: none;
+}
+#bbq-card {
+  position: relative;
+  background: #1a1a2e;
+  border: 3px solid #f5a623;
+  border-radius: 16px;
+  padding: 20px 28px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 0 40px rgba(245, 166, 35, 0.3);
+  max-width: 92vw;
+}
+#bbq-close-btn {
+  position: absolute;
+  top: 6px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #f5a623;
+  font-size: 28px;
+  cursor: pointer;
+  line-height: 1;
+  z-index: 2;
+}
+#bbq-close-btn:hover {
+  color: #fff;
+}
+#bbq-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 20px;
+  color: #f5a623;
+  text-shadow: 0 0 10px rgba(245, 166, 35, 0.6);
+  letter-spacing: 3px;
+}
+#bbq-canvas {
+  border-radius: 8px;
+  cursor: pointer;
+}
+#bbq-score {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  color: #f5a623;
+}
+#bbq-hint {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: #888;
+}
+
 /* --- Toilet game modal --- */
 #toilet-modal {
   position: fixed;
