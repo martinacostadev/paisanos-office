@@ -1009,3 +1009,398 @@ body {
     display: flex;
   }
 }
+
+/* --- Toilet game modal --- */
+#toilet-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10010;
+}
+#toilet-modal.toilet-modal-hidden {
+  display: none;
+}
+#toilet-card {
+  position: relative;
+  background: #1a1a2e;
+  border: 3px solid #f5a623;
+  border-radius: 16px;
+  padding: 20px 24px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 0 40px rgba(245, 166, 35, 0.3);
+}
+#toilet-close-btn {
+  position: absolute;
+  top: 6px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #f5a623;
+  font-size: 28px;
+  cursor: pointer;
+  line-height: 1;
+  z-index: 2;
+}
+#toilet-close-btn:hover {
+  color: #fff;
+}
+#toilet-canvas {
+  border-radius: 8px;
+  cursor: none;
+}
+#toilet-score {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  color: #f5a623;
+  min-height: 18px;
+}
+
+/* --- Fridge modal --- */
+#fridge-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10010;
+}
+#fridge-modal.fridge-modal-hidden {
+  display: none;
+}
+#fridge-card {
+  position: relative;
+  background: linear-gradient(180deg, #e8e8e8 0%, #d0d0d0 100%);
+  border: 4px solid #999;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 0 50px rgba(0,0,0,0.5), inset 0 0 30px rgba(255,255,255,0.1);
+  width: 520px;
+  max-width: 92vw;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+#fridge-close-btn {
+  position: absolute;
+  top: 6px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 28px;
+  cursor: pointer;
+  line-height: 1;
+  z-index: 2;
+}
+#fridge-close-btn:hover {
+  color: #333;
+}
+#fridge-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: #f5f5f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.fridge-shelf {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 12px;
+  border-bottom: 3px solid #c0c0c0;
+  background: linear-gradient(180deg, #fffef5 0%, #f0efe8 100%);
+  flex-wrap: wrap;
+}
+.fridge-shelf:last-child {
+  border-bottom: none;
+}
+.fridge-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.6);
+  transition: transform 0.2s;
+  cursor: default;
+}
+.fridge-item:hover {
+  transform: scale(1.12);
+  background: rgba(255,255,255,0.9);
+}
+.fridge-emoji {
+  font-size: 48px;
+  line-height: 1;
+}
+.fridge-label {
+  font-family: Arial, sans-serif;
+  font-size: 10px;
+  font-weight: bold;
+  color: #444;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* --- Guitar modal --- */
+#guitar-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10010;
+}
+#guitar-modal.guitar-modal-hidden {
+  display: none;
+}
+#guitar-card {
+  position: relative;
+  background: #1a1a2e;
+  border: 3px solid #f5a623;
+  border-radius: 16px;
+  padding: 32px 48px;
+  box-shadow: 0 0 40px rgba(245, 166, 35, 0.3);
+}
+#guitar-close-btn {
+  position: absolute;
+  top: 8px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: #f5a623;
+  font-size: 28px;
+  cursor: pointer;
+  line-height: 1;
+}
+#guitar-close-btn:hover {
+  color: #fff;
+}
+#guitar-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  min-height: 280px;
+}
+#guitar-avatar {
+  image-rendering: pixelated;
+  width: 256px;
+  height: 256px;
+}
+#guitar-instrument {
+  image-rendering: pixelated;
+  width: 160px;
+  height: 160px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin-left: -80px;
+  margin-top: -30px;
+  z-index: 2;
+  animation: guitar-strum 0.3s ease-in-out infinite alternate;
+}
+@keyframes guitar-strum {
+  0% { transform: rotate(-48deg); }
+  100% { transform: rotate(-38deg); }
+}
+#guitar-notes-container {
+  position: absolute;
+  inset: -60px;
+  pointer-events: none;
+  overflow: visible;
+}
+.guitar-note {
+  position: absolute;
+  font-size: 36px;
+  animation: note-float 2.5s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes note-float {
+  0% { opacity: 1; transform: translate(0, 0) scale(1); }
+  100% { opacity: 0; transform: translate(var(--nx), -160px) scale(1.5); }
+}
+
+/* --- TV modal --- */
+#tv-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10010;
+}
+#tv-modal.tv-modal-hidden {
+  display: none;
+}
+#tv-modal-card {
+  position: relative;
+  width: 85vw;
+  height: 80vh;
+  max-width: 1100px;
+  background: #1a1a2e;
+  border: 3px solid #f5a623;
+  border-radius: 12px;
+  overflow: hidden;
+}
+#tv-modal-close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #f5a623;
+  font-size: 28px;
+  cursor: pointer;
+  z-index: 2;
+  line-height: 1;
+}
+#tv-modal-close:hover {
+  color: #fff;
+}
+#tv-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* --- Arcade overlay --- */
+#arcade-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10010;
+  transition: opacity 0.3s;
+}
+#arcade-overlay.arcade-hidden {
+  display: none;
+}
+#arcade-card {
+  background: #1a1a2e;
+  border: 3px solid #f5a623;
+  border-radius: 16px;
+  padding: 20px 28px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 0 40px rgba(245, 166, 35, 0.3);
+  max-width: 90vw;
+}
+#arcade-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 22px;
+  color: #f5a623;
+  text-shadow: 0 0 10px rgba(245, 166, 35, 0.6);
+  letter-spacing: 4px;
+}
+/* Game selector grid */
+#arcade-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+}
+.arcade-game-card {
+  background: #12122a;
+  border: 2px solid #333;
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.arcade-game-card:hover {
+  border-color: #f5a623;
+  background: #1a1a3a;
+  transform: scale(1.03);
+}
+.arcade-thumb {
+  background: #0a0a1a;
+  border-radius: 4px;
+  image-rendering: pixelated;
+  width: 80px;
+  height: 64px;
+}
+.arcade-game-name {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: #f5a623;
+}
+.arcade-game-record {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: #00cc88;
+}
+/* Game screen */
+#arcade-game-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+#arcade-game-screen.arcade-screen-hidden {
+  display: none;
+}
+#arcade-canvas {
+  background: #0a0a1a;
+  border: 2px solid #333;
+  border-radius: 6px;
+  image-rendering: pixelated;
+  max-width: 100%;
+}
+#arcade-buttons {
+  display: flex;
+  gap: 16px;
+}
+#arcade-buttons button, #arcade-exit-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  padding: 10px 24px;
+  border: 2px solid #f5a623;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+#arcade-cancel-btn {
+  background: #333;
+  color: #ccc;
+}
+#arcade-cancel-btn:hover {
+  background: #555;
+  color: #fff;
+}
+#arcade-exit-btn {
+  background: #cc3333;
+  color: #fff;
+  border-color: #ff4444;
+}
+#arcade-exit-btn:hover {
+  background: #ee4444;
+}
+#arcade-exit-btn.arcade-exit-hidden {
+  display: none;
+}
+#arcade-score {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: #00cc88;
+  min-height: 18px;
+}

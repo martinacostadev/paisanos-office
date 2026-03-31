@@ -2,6 +2,10 @@ import Phaser from 'phaser';
 import socketManager from '../network/SocketManager.js';
 import webRTCManager from '../network/WebRTCManager.js';
 import { generateWorkerTextures, destroyWorkerTextures } from '../utils/workerTexture.js';
+import {
+  startInvaders, startSnake, startPong, startBreakout,
+  drawInvadersThumb, drawSnakeThumb, drawPongThumb, drawBreakoutThumb,
+} from '../arcade/ArcadeGames.js';
 
 const TILE = 16;
 const MAP_COLS = 44;
@@ -119,6 +123,21 @@ export default class OfficeScene extends Phaser.Scene {
 
     // Chat setup
     this.setupChat();
+
+    // Toilet game setup
+    this.setupToiletGame();
+
+    // Fridge proximity setup (disabled)
+    // this.setupFridge();
+
+    // Guitar proximity setup
+    this.setupGuitar();
+
+    // TV proximity setup
+    this.setupTV();
+
+    // Arcade machine setup
+    this.setupArcade();
 
     // Place bot NPCs
     this.setupBots();
@@ -651,6 +670,9 @@ export default class OfficeScene extends Phaser.Scene {
     this.placeSolid('wall-shelf', 1, 1);
     this.placeSolid('wall-shelf', 1, 2);
     this.placeDecor('backpack', 7, 12);
+    this.placeSolid('arcade-machine', 4, 1);
+    this.arcadeMachineCol = 4;
+    this.arcadeMachineRow = 1;
     this.placeDecor('guitar', 25, 13);
     this.placeDecor('musical-notes', 26, 13);
 
@@ -731,6 +753,55 @@ export default class OfficeScene extends Phaser.Scene {
     }
 
     this.placeSolid('hammock', 40, 7);
+
+    // Garden cats
+    // Orange cat with animated tail (near BBQ)
+    this.catOrange = this.add.sprite(37 * TILE + TILE / 2, 6 * TILE + TILE / 2, 'cat-orange-0');
+    this.catOrange.setDepth(6 + 0.5);
+    // Black cat with animated tail (near pool)
+    this.catBlack = this.add.sprite(38 * TILE + TILE / 2, 11 * TILE + TILE / 2, 'cat-black-0');
+    this.catBlack.setDepth(11 + 0.5);
+    // White/gray cat sleeping (near bench)
+    this.placeDecor('cat-white', 35, 5);
+    // Tail animation for orange and black cats
+    this.catTailFrame = 0;
+    this.time.addEvent({
+      delay: 600,
+      callback: () => {
+        this.catTailFrame = this.catTailFrame === 0 ? 1 : 0;
+        if (this.catOrange) this.catOrange.setTexture(`cat-orange-${this.catTailFrame}`);
+        if (this.catBlack) this.catBlack.setTexture(`cat-black-${this.catTailFrame}`);
+      },
+      loop: true,
+    });
+
+    // Garden birds
+    this.placeDecor('bird-stand', 34, 4);
+    // Flying bird (animated)
+    this.flyingBird = this.add.sprite(37 * TILE + TILE / 2, 4 * TILE + TILE / 2, 'bird-fly-0');
+    this.flyingBird.setDepth(4 + 0.5);
+    this.flyingBirdDir = 1;
+    this.flyingBirdFrame = 0;
+    this.time.addEvent({
+      delay: 250,
+      callback: () => {
+        if (!this.flyingBird) return;
+        this.flyingBirdFrame = this.flyingBirdFrame === 0 ? 1 : 0;
+        this.flyingBird.setTexture(`bird-fly-${this.flyingBirdFrame}`);
+        // Move bird horizontally across garden (cols 28-42)
+        this.flyingBird.x += this.flyingBirdDir * TILE * 0.4;
+        // Slight vertical bobbing
+        this.flyingBird.y += Math.sin(this.flyingBird.x * 0.02) * 1.5;
+        if (this.flyingBird.x > 42 * TILE) {
+          this.flyingBirdDir = -1;
+          this.flyingBird.flipX = true;
+        } else if (this.flyingBird.x < 29 * TILE) {
+          this.flyingBirdDir = 1;
+          this.flyingBird.flipX = false;
+        }
+      },
+      loop: true,
+    });
 
     // "SECRET" sign above the door
     this.placeSolid('secret-sign', 28, 4);
@@ -1113,6 +1184,9 @@ export default class OfficeScene extends Phaser.Scene {
     const localSprite = this.players.get(this.localId);
     if (!localSprite) return;
 
+    // Block movement while overlays are open
+    if (this.arcadeOpen || this.tvOpen || this.guitarOpen || this.toiletOpen) return;
+
     if (time - this.moveTimer < 150) return;
 
     let dx = 0;
@@ -1167,6 +1241,21 @@ export default class OfficeScene extends Phaser.Scene {
 
     // Check chair sit / "EN REU" badge
     this.checkChairStatus(localSprite, newX, newY);
+
+    // Check toilet proximity
+    this.checkToiletProximity(newX, newY);
+
+    // Check fridge proximity (disabled)
+    // this.checkFridgeProximity(newX, newY);
+
+    // Check guitar proximity
+    this.checkGuitarProximity(newX, newY);
+
+    // Check TV proximity
+    this.checkTVProximity(newX, newY);
+
+    // Check arcade machine proximity
+    this.checkArcadeProximity(newX, newY);
 
     this.moveTimer = time;
   }
@@ -1907,6 +1996,681 @@ export default class OfficeScene extends Phaser.Scene {
     const currentMax = parseInt(currentText.split('/')[0], 10) || 2;
     const nextMax = currentMax >= 5 ? 2 : currentMax + 1;
     socketManager.setMeetingCapacity(this.currentMeetingRoom, nextMax);
+  }
+
+  // --- Toilet game ---
+
+  setupToiletGame() {
+    this.toiletOpen = false;
+    this.toiletNearby = false;
+    this._toiletAnimFrame = null;
+    this._toiletMouseMove = null;
+    document.getElementById('toilet-close-btn').addEventListener('click', () => this.closeToiletGame());
+    // Toilet positions: women's (23,22)(25,22), men's (31,22)(33,22)
+    this.toiletPositions = [
+      { col: 23, row: 22 }, { col: 25, row: 22 },
+      { col: 31, row: 22 }, { col: 33, row: 22 },
+    ];
+  }
+
+  checkToiletProximity(px, py) {
+    if (this.toiletOpen || this.arcadeOpen || this.tvOpen || this.guitarOpen) return;
+    let near = false;
+    for (const t of this.toiletPositions) {
+      if (Math.max(Math.abs(px - t.col), Math.abs(py - t.row)) <= 1) {
+        near = true;
+        break;
+      }
+    }
+    const wasNearby = this.toiletNearby;
+    this.toiletNearby = near;
+    if (near && !wasNearby) this.openToiletGame();
+  }
+
+  openToiletGame() {
+    this.toiletOpen = true;
+    this.input.keyboard.enabled = false;
+    this.input.keyboard.resetKeys();
+    document.getElementById('toilet-modal').classList.remove('toilet-modal-hidden');
+    this.runToiletGame();
+  }
+
+  closeToiletGame() {
+    this.toiletOpen = false;
+    this.input.keyboard.enabled = true;
+    if (this._toiletAnimFrame) {
+      cancelAnimationFrame(this._toiletAnimFrame);
+      this._toiletAnimFrame = null;
+    }
+    if (this._toiletMouseMove) {
+      document.getElementById('toilet-canvas').removeEventListener('mousemove', this._toiletMouseMove);
+      this._toiletMouseMove = null;
+    }
+    document.getElementById('toilet-modal').classList.add('toilet-modal-hidden');
+  }
+
+  runToiletGame() {
+    const canvas = document.getElementById('toilet-canvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
+    const scoreEl = document.getElementById('toilet-score');
+
+    // Toilet bowl target area
+    const bowl = { x: W / 2, y: H / 2 + 40, rx: 50, ry: 35 };
+
+    // Stream state
+    const stream = { x: W / 2, y: 60 };
+    let mouseX = W / 2;
+    let mouseY = 60;
+    let score = 0;
+    let hits = 0;
+    let misses = 0;
+    let timer = 15 * 60; // 15 seconds at 60fps
+    let drops = [];
+    let splashes = [];
+
+    // Wobble (makes aiming harder over time)
+    let wobblePhase = 0;
+
+    const onMouseMove = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseX = (e.clientX - rect.left) * (W / rect.width);
+      mouseY = (e.clientY - rect.top) * (H / rect.height);
+    };
+    canvas.addEventListener('mousemove', onMouseMove);
+    this._toiletMouseMove = onMouseMove;
+
+    const isInBowl = (dx, dy) => {
+      return (dx * dx) / (bowl.rx * bowl.rx) + (dy * dy) / (bowl.ry * bowl.ry) <= 1;
+    };
+
+    const gameLoop = () => {
+      if (!this.toiletOpen) return;
+      timer--;
+
+      // Wobble increases over time
+      wobblePhase += 0.08;
+      const wobbleAmt = 8 + (1 - timer / (15 * 60)) * 20;
+      const wobX = Math.sin(wobblePhase * 2.3) * wobbleAmt;
+      const wobY = Math.cos(wobblePhase * 1.7) * wobbleAmt * 0.5;
+
+      // Stream follows mouse with wobble
+      stream.x = mouseX + wobX;
+      stream.y = Math.max(60, mouseY) + wobY;
+
+      // Spawn drops from stream tip
+      if (timer > 0) {
+        for (let i = 0; i < 3; i++) {
+          drops.push({
+            x: stream.x + (Math.random() - 0.5) * 6,
+            y: stream.y,
+            dy: 4 + Math.random() * 3,
+            dx: (Math.random() - 0.5) * 2 + wobX * 0.05,
+            life: 80,
+          });
+        }
+      }
+
+      // Update drops
+      drops = drops.filter((d) => {
+        d.x += d.dx;
+        d.y += d.dy;
+        d.dy += 0.15; // gravity
+        d.life--;
+
+        // Check if hit bowl area
+        if (d.y >= bowl.y - 10 && d.y <= bowl.y + 20) {
+          const dx = d.x - bowl.x;
+          const dy = d.y - bowl.y;
+          if (isInBowl(dx, dy)) {
+            hits++;
+            score += 1;
+            // Tiny splash
+            splashes.push({ x: d.x, y: d.y, r: 3, life: 10 });
+            return false;
+          }
+        }
+
+        // Hit floor
+        if (d.y > H - 20) {
+          misses++;
+          splashes.push({ x: d.x, y: H - 20, r: 4, life: 12 });
+          return false;
+        }
+
+        return d.life > 0;
+      });
+
+      // Update splashes
+      splashes = splashes.filter((s) => {
+        s.r += 0.3;
+        s.life--;
+        return s.life > 0;
+      });
+
+      // --- Draw ---
+      // Bathroom wall
+      ctx.fillStyle = '#e8e0d0';
+      ctx.fillRect(0, 0, W, H);
+      // Tile grid
+      ctx.strokeStyle = '#d0c8b8';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+      for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+      // Floor
+      ctx.fillStyle = '#c0b8a8';
+      ctx.fillRect(0, H - 20, W, 20);
+
+      // --- Realistic toilet (top-down view) ---
+      const bx = bowl.x, by = bowl.y;
+
+      // Shadow under toilet
+      ctx.fillStyle = 'rgba(0,0,0,0.08)';
+      ctx.beginPath();
+      ctx.ellipse(bx + 3, by + 50, 58, 30, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Tank (back)
+      ctx.fillStyle = '#e8e8e8';
+      ctx.beginPath();
+      ctx.roundRect(bx - 38, by - 70, 76, 35, 6);
+      ctx.fill();
+      ctx.strokeStyle = '#ccc';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      // Tank lid line
+      ctx.strokeStyle = '#d5d5d5';
+      ctx.beginPath();
+      ctx.moveTo(bx - 32, by - 53);
+      ctx.lineTo(bx + 32, by - 53);
+      ctx.stroke();
+      // Flush handle
+      ctx.fillStyle = '#c0c0c0';
+      ctx.fillRect(bx + 28, by - 63, 12, 5);
+      ctx.fillStyle = '#b0b0b0';
+      ctx.beginPath();
+      ctx.arc(bx + 40, by - 60, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Toilet body (outer shape — rounded trapezoid)
+      ctx.fillStyle = '#f2f2f2';
+      ctx.beginPath();
+      ctx.moveTo(bx - 40, by - 38);
+      ctx.lineTo(bx + 40, by - 38);
+      ctx.quadraticCurveTo(bx + 55, by + 10, bx + 45, by + 55);
+      ctx.quadraticCurveTo(bx, by + 72, bx - 45, by + 55);
+      ctx.quadraticCurveTo(bx - 55, by + 10, bx - 40, by - 38);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#d0d0d0';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Seat (outer rim)
+      ctx.fillStyle = '#e8e8e8';
+      ctx.beginPath();
+      ctx.ellipse(bx, by + 8, bowl.rx + 2, bowl.ry + 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#c8c8c8';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      // Seat (inner opening — the target)
+      ctx.fillStyle = '#d8e4ee';
+      ctx.beginPath();
+      ctx.ellipse(bx, by + 8, bowl.rx - 4, bowl.ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#bcc8d4';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Water in bowl
+      const waterGrad = ctx.createRadialGradient(bx, by + 10, 5, bx, by + 10, bowl.rx - 10);
+      waterGrad.addColorStop(0, 'rgba(140, 200, 255, 0.5)');
+      waterGrad.addColorStop(1, 'rgba(100, 170, 240, 0.2)');
+      ctx.fillStyle = waterGrad;
+      ctx.beginPath();
+      ctx.ellipse(bx, by + 10, bowl.rx - 12, bowl.ry - 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Water highlight
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.beginPath();
+      ctx.ellipse(bx - 10, by + 4, 12, 6, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Seat hinge bolts
+      ctx.fillStyle = '#b0b0b0';
+      ctx.beginPath(); ctx.arc(bx - 30, by - 28, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(bx + 30, by - 28, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#999';
+      ctx.beginPath(); ctx.arc(bx - 30, by - 28, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(bx + 30, by - 28, 2, 0, Math.PI * 2); ctx.fill();
+
+      // Drops (yellow stream)
+      ctx.fillStyle = '#f5c842';
+      drops.forEach((d) => {
+        const sz = 2 + Math.random();
+        ctx.globalAlpha = d.life / 80;
+        ctx.fillRect(d.x - sz / 2, d.y - sz / 2, sz, sz * 1.5);
+      });
+      ctx.globalAlpha = 1;
+
+      // Splashes
+      splashes.forEach((s) => {
+        const inBowl = isInBowl(s.x - bowl.x, s.y - bowl.y);
+        ctx.strokeStyle = inBowl ? 'rgba(100,180,255,0.4)' : 'rgba(245,200,66,0.5)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+
+      // Crosshair at stream position
+      if (timer > 0) {
+        ctx.strokeStyle = '#f5a623';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(stream.x, stream.y, 10, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(stream.x - 14, stream.y);
+        ctx.lineTo(stream.x + 14, stream.y);
+        ctx.moveTo(stream.x, stream.y - 14);
+        ctx.lineTo(stream.x, stream.y + 14);
+        ctx.stroke();
+      }
+
+      // Timer bar
+      const pct = Math.max(0, timer / (15 * 60));
+      ctx.fillStyle = '#333';
+      ctx.fillRect(20, 14, W - 40, 12);
+      ctx.fillStyle = pct > 0.3 ? '#4caf50' : '#f44336';
+      ctx.fillRect(20, 14, (W - 40) * pct, 12);
+
+      // Accuracy
+      const total = hits + misses;
+      const accuracy = total > 0 ? Math.round((hits / total) * 100) : 100;
+      scoreEl.textContent = `Puntaje: ${score}  |  Punteria: ${accuracy}%`;
+
+      // Game over
+      if (timer <= 0 && drops.length === 0) {
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.textAlign = 'center';
+        ctx.fillStyle = accuracy >= 80 ? '#4caf50' : accuracy >= 50 ? '#f5a623' : '#f44336';
+        ctx.font = '22px "Press Start 2P", monospace';
+        ctx.fillText(accuracy >= 80 ? 'EXCELENTE!' : accuracy >= 50 ? 'BIEN...' : 'DESASTRE!', W / 2, H / 2 - 30);
+
+        ctx.fillStyle = '#fff';
+        ctx.font = '12px "Press Start 2P", monospace';
+        ctx.fillText(`Punteria: ${accuracy}%`, W / 2, H / 2 + 10);
+        ctx.fillText(`Puntaje: ${score}`, W / 2, H / 2 + 35);
+
+        // Auto close after 3 seconds
+        setTimeout(() => this.closeToiletGame(), 3000);
+        return;
+      }
+
+      this._toiletAnimFrame = requestAnimationFrame(gameLoop);
+    };
+
+    this._toiletAnimFrame = requestAnimationFrame(gameLoop);
+  }
+
+  // --- Fridge modal ---
+
+  setupFridge() {
+    this.fridgeOpen = false;
+    this.fridgeNearby = false;
+    this.fridgeCol = 23;
+    this.fridgeRow = 1;
+    document.getElementById('fridge-close-btn').addEventListener('click', () => this.closeFridge());
+  }
+
+  checkFridgeProximity(px, py) {
+    if (this.fridgeOpen || this.arcadeOpen || this.tvOpen || this.guitarOpen) return;
+    const dist = Math.max(Math.abs(px - this.fridgeCol), Math.abs(py - this.fridgeRow));
+    const wasNearby = this.fridgeNearby;
+    this.fridgeNearby = dist <= 1;
+    if (this.fridgeNearby && !wasNearby) this.openFridge();
+  }
+
+  openFridge() {
+    this.fridgeOpen = true;
+    this.input.keyboard.enabled = false;
+    this.input.keyboard.resetKeys();
+    document.getElementById('fridge-modal').classList.remove('fridge-modal-hidden');
+  }
+
+  closeFridge() {
+    this.fridgeOpen = false;
+    this.input.keyboard.enabled = true;
+    document.getElementById('fridge-modal').classList.add('fridge-modal-hidden');
+  }
+
+  // --- Guitar modal ---
+
+  setupGuitar() {
+    this.guitarOpen = false;
+    this.guitarNearby = false;
+    this.guitarCol = 25;
+    this.guitarRow = 13;
+    this._guitarNoteInterval = null;
+
+    document.getElementById('guitar-close-btn').addEventListener('click', () => this.closeGuitar());
+  }
+
+  checkGuitarProximity(px, py) {
+    if (this.guitarOpen || this.arcadeOpen || this.tvOpen) return;
+    const dist = Math.max(Math.abs(px - this.guitarCol), Math.abs(py - this.guitarRow));
+    const wasNearby = this.guitarNearby;
+    this.guitarNearby = dist <= 1;
+    if (this.guitarNearby && !wasNearby) this.openGuitar();
+  }
+
+  openGuitar() {
+    this.guitarOpen = true;
+    this.input.keyboard.enabled = false;
+    this.input.keyboard.resetKeys();
+
+    // Draw big avatar
+    const avatarCanvas = document.getElementById('guitar-avatar');
+    const actx = avatarCanvas.getContext('2d');
+    actx.imageSmoothingEnabled = false;
+    actx.clearRect(0, 0, 256, 256);
+    try {
+      const tex = this.textures.get(`worker-${this.localId}-0`);
+      if (tex && tex.getSourceImage()) {
+        actx.drawImage(tex.getSourceImage(), 0, 0, 16, 16, 0, 0, 256, 256);
+      }
+    } catch {}
+
+    // Draw the guitar texture without the floor background
+    const guitarCanvas = document.getElementById('guitar-instrument');
+    const gctx = guitarCanvas.getContext('2d');
+    gctx.imageSmoothingEnabled = false;
+    gctx.clearRect(0, 0, 128, 128);
+    try {
+      const gTex = this.textures.get('guitar');
+      if (gTex && gTex.getSourceImage()) {
+        // Draw to a temp canvas first to remove floor pixels
+        const tmp = document.createElement('canvas');
+        tmp.width = 16; tmp.height = 16;
+        const tctx = tmp.getContext('2d');
+        tctx.drawImage(gTex.getSourceImage(), 0, 0);
+        const imgData = tctx.getImageData(0, 0, 16, 16);
+        const d = imgData.data;
+        // Remove gray floor colors (make transparent)
+        for (let i = 0; i < d.length; i += 4) {
+          const r = d[i], g = d[i + 1], b = d[i + 2];
+          // Floor grays: ~0x8a8078 (138,128,120), ~0x7d756d (125,117,109), ~0x918980 (145,137,128)
+          if (r > 100 && r < 160 && g > 90 && g < 150 && b > 85 && b < 140 &&
+              Math.abs(r - g) < 25 && Math.abs(g - b) < 25) {
+            d[i + 3] = 0; // make transparent
+          }
+        }
+        tctx.putImageData(imgData, 0, 0);
+        gctx.drawImage(tmp, 0, 0, 16, 16, 0, 0, 128, 128);
+      }
+    } catch {}
+
+    document.getElementById('guitar-modal').classList.remove('guitar-modal-hidden');
+
+    // Spawn floating music notes
+    const notes = ['🎵', '🎶', '🎸', '♪', '♫'];
+    const container = document.getElementById('guitar-notes-container');
+    container.innerHTML = '';
+
+    this._guitarNoteInterval = setInterval(() => {
+      const note = document.createElement('div');
+      note.className = 'guitar-note';
+      note.textContent = notes[Math.floor(Math.random() * notes.length)];
+      const startX = 50 + Math.random() * 300;
+      note.style.left = startX + 'px';
+      note.style.bottom = '20px';
+      note.style.setProperty('--nx', (Math.random() - 0.5) * 120 + 'px');
+      container.appendChild(note);
+      setTimeout(() => note.remove(), 2500);
+    }, 350);
+  }
+
+  closeGuitar() {
+    this.guitarOpen = false;
+    this.input.keyboard.enabled = true;
+    document.getElementById('guitar-modal').classList.add('guitar-modal-hidden');
+    if (this._guitarNoteInterval) {
+      clearInterval(this._guitarNoteInterval);
+      this._guitarNoteInterval = null;
+    }
+    document.getElementById('guitar-notes-container').innerHTML = '';
+  }
+
+  // --- TV modal ---
+
+  setupTV() {
+    this.tvOpen = false;
+    this.tvNearby = false;
+    // TV occupies cols 1-2, rows 7-10
+    this.tvCols = [1, 2];
+    this.tvRows = [7, 8, 9, 10];
+
+    document.getElementById('tv-modal-close').addEventListener('click', () => this.closeTV());
+  }
+
+  checkTVProximity(px, py) {
+    if (this.tvOpen || this.arcadeOpen) return;
+    // Check if adjacent to any TV tile
+    let near = false;
+    for (const tc of this.tvCols) {
+      for (const tr of this.tvRows) {
+        const dist = Math.max(Math.abs(px - tc), Math.abs(py - tr));
+        if (dist <= 1) { near = true; break; }
+      }
+      if (near) break;
+    }
+    const wasNearby = this.tvNearby;
+    this.tvNearby = near;
+    if (near && !wasNearby) this.openTV();
+  }
+
+  openTV() {
+    this.tvOpen = true;
+    this.input.keyboard.enabled = false;
+    this.input.keyboard.resetKeys();
+    const modal = document.getElementById('tv-modal');
+    const iframe = document.getElementById('tv-iframe');
+    iframe.src = 'https://www.paisanos.io';
+    modal.classList.remove('tv-modal-hidden');
+  }
+
+  closeTV() {
+    this.tvOpen = false;
+    this.input.keyboard.enabled = true;
+    const modal = document.getElementById('tv-modal');
+    const iframe = document.getElementById('tv-iframe');
+    modal.classList.add('tv-modal-hidden');
+    iframe.src = '';
+  }
+
+  // --- Arcade machine ---
+
+  _arcadeGames() {
+    return {
+      invaders: { name: 'Invaders', start: startInvaders, thumb: drawInvadersThumb },
+      snake: { name: 'Snake', start: startSnake, thumb: drawSnakeThumb },
+      pong: { name: 'Pong', start: startPong, thumb: drawPongThumb },
+      breakout: { name: 'Breakout', start: startBreakout, thumb: drawBreakoutThumb },
+    };
+  }
+
+  _loadHighScores() {
+    try {
+      return JSON.parse(localStorage.getItem('paisanos_arcade_scores')) || {};
+    } catch { return {}; }
+  }
+
+  _saveHighScore(gameId, score) {
+    const scores = this._loadHighScores();
+    if (!scores[gameId] || score > scores[gameId]) {
+      scores[gameId] = score;
+      try { localStorage.setItem('paisanos_arcade_scores', JSON.stringify(scores)); } catch {}
+    }
+  }
+
+  setupArcade() {
+    this.arcadeOpen = false;
+    this.arcadeGameRunning = false;
+    this.arcadeNearby = false;
+    this._activeGame = null;
+    this._selectedGameId = null;
+
+    document.getElementById('arcade-cancel-btn').addEventListener('click', () => this.closeArcade());
+    document.getElementById('arcade-exit-btn').addEventListener('click', () => this.closeArcade());
+
+    // Game card click handlers
+    document.querySelectorAll('.arcade-game-card').forEach((card) => {
+      card.addEventListener('click', () => {
+        this._selectedGameId = card.dataset.game;
+        this.startArcadeGame(card.dataset.game);
+      });
+    });
+  }
+
+  checkArcadeProximity(px, py) {
+    if (this.arcadeOpen) return;
+    const dist = Math.max(
+      Math.abs(px - this.arcadeMachineCol),
+      Math.abs(py - this.arcadeMachineRow)
+    );
+    const wasNearby = this.arcadeNearby;
+    this.arcadeNearby = dist <= 1;
+    if (this.arcadeNearby && !wasNearby) this.openArcade();
+  }
+
+  openArcade() {
+    this.arcadeOpen = true;
+    this.input.keyboard.enabled = false;
+    this.input.keyboard.resetKeys();
+
+    const overlay = document.getElementById('arcade-overlay');
+    const selector = document.getElementById('arcade-selector');
+    const gameScreen = document.getElementById('arcade-game-screen');
+    const buttonsDiv = document.getElementById('arcade-buttons');
+    const exitBtn = document.getElementById('arcade-exit-btn');
+
+    overlay.classList.remove('arcade-hidden');
+    selector.style.display = 'grid';
+    gameScreen.classList.add('arcade-screen-hidden');
+    buttonsDiv.style.display = 'flex';
+    exitBtn.classList.add('arcade-exit-hidden');
+
+    // Draw thumbnails and load high scores
+    const games = this._arcadeGames();
+    const scores = this._loadHighScores();
+    document.querySelectorAll('.arcade-game-card').forEach((card) => {
+      const id = card.dataset.game;
+      const game = games[id];
+      if (!game) return;
+      const thumbCanvas = card.querySelector('.arcade-thumb');
+      game.thumb(thumbCanvas);
+      const recordEl = card.querySelector('.arcade-game-record');
+      recordEl.textContent = `Record: ${scores[id] || 0}`;
+    });
+  }
+
+  closeArcade() {
+    this.stopArcadeGame();
+    this.arcadeOpen = false;
+    this.input.keyboard.enabled = true;
+    document.getElementById('arcade-overlay').classList.add('arcade-hidden');
+  }
+
+  startArcadeGame(gameId) {
+    // Clean up previous game if any
+    if (this._activeGame) {
+      this._activeGame.cleanup();
+      this._activeGame = null;
+    }
+    if (this._arcadeKeyDown) {
+      window.removeEventListener('keydown', this._arcadeKeyDown, true);
+      window.removeEventListener('keyup', this._arcadeKeyUp, true);
+    }
+
+    this.arcadeGameRunning = true;
+    this._selectedGameId = gameId;
+
+    // Switch from selector to game screen
+    document.getElementById('arcade-selector').style.display = 'none';
+    document.getElementById('arcade-game-screen').classList.remove('arcade-screen-hidden');
+    document.getElementById('arcade-buttons').style.display = 'none';
+    document.getElementById('arcade-exit-btn').classList.remove('arcade-exit-hidden');
+
+    const canvas = document.getElementById('arcade-canvas');
+    const scoreEl = document.getElementById('arcade-score');
+    scoreEl.textContent = 'Puntaje: 0';
+
+    const games = this._arcadeGames();
+    const gameDef = games[gameId];
+    if (!gameDef) return;
+
+    const onScore = (score) => {
+      scoreEl.textContent = `Puntaje: ${score}`;
+    };
+
+    const onGameOver = (finalScore) => {
+      this.arcadeGameRunning = false;
+      this._saveHighScore(gameId, finalScore);
+      // Show exit button + back to menu option
+      document.getElementById('arcade-exit-btn').classList.remove('arcade-exit-hidden');
+      // Clean up key listeners
+      if (this._arcadeKeyDown) {
+        window.removeEventListener('keydown', this._arcadeKeyDown, true);
+        window.removeEventListener('keyup', this._arcadeKeyUp, true);
+        this._arcadeKeyDown = null;
+        this._arcadeKeyUp = null;
+      }
+    };
+
+    this._activeGame = gameDef.start(canvas, onScore, onGameOver);
+
+    // Key handlers — capture phase to intercept before Phaser
+    const keyDown = (e) => {
+      if (!this.arcadeGameRunning || !this._activeGame) return;
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(e.key)) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        this._activeGame.keyDown(e);
+      }
+    };
+    const keyUp = (e) => {
+      if (!this._activeGame) return;
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(e.key)) {
+        e.stopImmediatePropagation();
+        this._activeGame.keyUp(e);
+      }
+    };
+    window.addEventListener('keydown', keyDown, true);
+    window.addEventListener('keyup', keyUp, true);
+    this._arcadeKeyDown = keyDown;
+    this._arcadeKeyUp = keyUp;
+  }
+
+  stopArcadeGame() {
+    if (this._activeGame) {
+      this._activeGame.cleanup();
+      this._activeGame = null;
+    }
+    this.arcadeGameRunning = false;
+    if (this._arcadeKeyDown) {
+      window.removeEventListener('keydown', this._arcadeKeyDown, true);
+      window.removeEventListener('keyup', this._arcadeKeyUp, true);
+      this._arcadeKeyDown = null;
+      this._arcadeKeyUp = null;
+    }
   }
 
   animateWorkers() {

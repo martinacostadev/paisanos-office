@@ -133,6 +133,112 @@
         <div id="modal-hint">Usa las flechas para moverte</div>
       </div>
     </div>
+    <!-- Toilet game modal -->
+    <div id="toilet-modal" class="toilet-modal-hidden">
+      <div id="toilet-card">
+        <button id="toilet-close-btn">&times;</button>
+        <canvas id="toilet-canvas" width="400" height="500"></canvas>
+        <div id="toilet-score">Puntaje: 0</div>
+      </div>
+    </div>
+
+    <!-- Fridge modal -->
+    <div id="fridge-modal" class="fridge-modal-hidden">
+      <div id="fridge-card">
+        <button id="fridge-close-btn">&times;</button>
+        <div id="fridge-body">
+          <div class="fridge-shelf">
+            <div class="fridge-item"><span class="fridge-emoji">🥤</span><span class="fridge-label">Coca-Cola</span></div>
+            <div class="fridge-item"><span class="fridge-emoji">🥤</span><span class="fridge-label">Sprite</span></div>
+            <div class="fridge-item"><span class="fridge-emoji">🥤</span><span class="fridge-label">Fanta</span></div>
+            <div class="fridge-item"><span class="fridge-emoji">🧃</span><span class="fridge-label">Jugo</span></div>
+            <div class="fridge-item"><span class="fridge-emoji">💧</span><span class="fridge-label">Agua</span></div>
+          </div>
+          <div class="fridge-shelf">
+            <div class="fridge-item"><span class="fridge-emoji">🍺</span><span class="fridge-label">Quilmes</span></div>
+            <div class="fridge-item"><span class="fridge-emoji">🍺</span><span class="fridge-label">Stella</span></div>
+            <div class="fridge-item"><span class="fridge-emoji">🍺</span><span class="fridge-label">Heineken</span></div>
+            <div class="fridge-item"><span class="fridge-emoji">🍺</span><span class="fridge-label">Corona</span></div>
+            <div class="fridge-item"><span class="fridge-emoji">🍺</span><span class="fridge-label">Patagonia</span></div>
+          </div>
+          <div class="fridge-shelf">
+            <div class="fridge-item"><span class="fridge-emoji">🧀</span><span class="fridge-label">Queso</span></div>
+            <div class="fridge-item"><span class="fridge-emoji">🥛</span><span class="fridge-label">Yogur</span></div>
+            <div class="fridge-item"><span class="fridge-emoji">🍫</span><span class="fridge-label">Postre</span></div>
+            <div class="fridge-item"><span class="fridge-emoji">🫙</span><span class="fridge-label">Dulce de leche</span></div>
+          </div>
+          <div class="fridge-shelf">
+            <div class="fridge-item"><span class="fridge-emoji">🥐</span><span class="fridge-label">Medialunas</span></div>
+            <div class="fridge-item"><span class="fridge-emoji">🍪</span><span class="fridge-label">Alfajor</span></div>
+            <div class="fridge-item"><span class="fridge-emoji">🍰</span><span class="fridge-label">Torta</span></div>
+            <div class="fridge-item"><span class="fridge-emoji">🍎</span><span class="fridge-label">Manzana</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Guitar modal -->
+    <div id="guitar-modal" class="guitar-modal-hidden">
+      <div id="guitar-card">
+        <button id="guitar-close-btn">&times;</button>
+        <div id="guitar-stage">
+          <canvas id="guitar-avatar" width="256" height="256"></canvas>
+          <canvas id="guitar-instrument" width="128" height="128"></canvas>
+          <div id="guitar-notes-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TV modal -->
+    <div id="tv-modal" class="tv-modal-hidden">
+      <div id="tv-modal-card">
+        <button id="tv-modal-close">&times;</button>
+        <iframe id="tv-iframe" src="" frameborder="0" allowfullscreen></iframe>
+      </div>
+    </div>
+
+    <!-- Arcade overlay -->
+    <div id="arcade-overlay" class="arcade-hidden">
+      <div id="arcade-card">
+        <div id="arcade-title">ARCADE</div>
+
+        <!-- Game selector (shown first) -->
+        <div id="arcade-selector">
+          <div class="arcade-game-card" data-game="invaders">
+            <canvas class="arcade-thumb" width="80" height="64"></canvas>
+            <div class="arcade-game-name">Invaders</div>
+            <div class="arcade-game-record">Record: 0</div>
+          </div>
+          <div class="arcade-game-card" data-game="snake">
+            <canvas class="arcade-thumb" width="80" height="64"></canvas>
+            <div class="arcade-game-name">Snake</div>
+            <div class="arcade-game-record">Record: 0</div>
+          </div>
+          <div class="arcade-game-card" data-game="pong">
+            <canvas class="arcade-thumb" width="80" height="64"></canvas>
+            <div class="arcade-game-name">Pong</div>
+            <div class="arcade-game-record">Record: 0</div>
+          </div>
+          <div class="arcade-game-card" data-game="breakout">
+            <canvas class="arcade-thumb" width="80" height="64"></canvas>
+            <div class="arcade-game-name">Breakout</div>
+            <div class="arcade-game-record">Record: 0</div>
+          </div>
+        </div>
+
+        <!-- Game screen (shown when playing) -->
+        <div id="arcade-game-screen" class="arcade-screen-hidden">
+          <canvas id="arcade-canvas" width="400" height="320"></canvas>
+          <div id="arcade-score">Puntaje: 0</div>
+        </div>
+
+        <div id="arcade-buttons">
+          <button id="arcade-cancel-btn">Cancelar</button>
+        </div>
+        <button id="arcade-exit-btn" class="arcade-exit-hidden">Salir</button>
+      </div>
+    </div>
+
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

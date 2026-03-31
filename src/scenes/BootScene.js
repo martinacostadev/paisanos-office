@@ -1281,6 +1281,252 @@ export default class BootScene extends Phaser.Scene {
       g.fillRect(13, 8, 2, 4);
     });
 
+    // Bird standing (small garden bird)
+    this.createTile('bird-stand', (g) => {
+      // Garden floor
+      g.fillStyle(0x4a8c3f);
+      g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0x55994a);
+      g.fillRect(2, 3, 4, 3);
+      g.fillRect(10, 8, 3, 2);
+      // Body
+      g.fillStyle(0x8b5e3c);
+      g.fillRect(5, 8, 6, 4);
+      g.fillStyle(0xa06e44);
+      g.fillRect(6, 9, 4, 2);
+      // Head
+      g.fillStyle(0x8b5e3c);
+      g.fillRect(9, 6, 4, 3);
+      // Eye
+      g.fillStyle(0x111111);
+      g.fillRect(11, 7, 1, 1);
+      // Beak
+      g.fillStyle(0xf5a623);
+      g.fillRect(13, 7, 2, 1);
+      // Tail
+      g.fillStyle(0x6b4422);
+      g.fillRect(3, 8, 3, 1);
+      g.fillRect(2, 7, 2, 1);
+      // Legs
+      g.fillStyle(0xcc8833);
+      g.fillRect(7, 12, 1, 2);
+      g.fillRect(10, 12, 1, 2);
+      g.fillRect(6, 14, 2, 1);
+      g.fillRect(10, 14, 2, 1);
+      // Wing detail
+      g.fillStyle(0x7a4f2e);
+      g.fillRect(6, 9, 2, 2);
+    });
+
+    // Bird flying frames (2 frames for wing animation)
+    // Helper: draw a sitting cat (side view, facing right)
+    // color: main body, dark: darker shade, ear: inner ear, eye: eye color
+    const drawCatBody = (g, color, dark, ear, eye) => {
+      // Body (oval-ish)
+      g.fillStyle(color);
+      g.fillRect(3, 9, 8, 4);
+      g.fillRect(4, 8, 6, 1);
+      // Head
+      g.fillStyle(color);
+      g.fillRect(10, 6, 4, 4);
+      g.fillRect(9, 7, 1, 2);
+      // Ears (pointy)
+      g.fillStyle(dark);
+      g.fillRect(10, 4, 2, 2);
+      g.fillRect(13, 4, 2, 2);
+      g.fillStyle(ear);
+      g.fillRect(11, 5, 1, 1);
+      g.fillRect(13, 5, 1, 1);
+      // Eyes
+      g.fillStyle(eye);
+      g.fillRect(11, 7, 1, 1);
+      g.fillRect(13, 7, 1, 1);
+      // Nose + mouth
+      g.fillStyle(0xff9999);
+      g.fillRect(14, 8, 1, 1);
+      // Whiskers
+      g.fillStyle(0xcccccc);
+      g.fillRect(15, 7, 1, 1);
+      g.fillRect(15, 9, 1, 1);
+      // Front legs
+      g.fillStyle(color);
+      g.fillRect(9, 13, 2, 2);
+      // Back legs
+      g.fillRect(4, 13, 2, 2);
+      // Paws
+      g.fillStyle(dark);
+      g.fillRect(9, 14, 2, 1);
+      g.fillRect(4, 14, 2, 1);
+    };
+
+    // Orange cat — tail up
+    this.createTile('cat-orange-0', (g) => {
+      g.fillStyle(0x4a8c3f); g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0x55994a); g.fillRect(7, 3, 4, 3);
+      drawCatBody(g, 0xe88833, 0xcc6622, 0xffaa77, 0x33aa33);
+      // Tail curving up
+      g.fillStyle(0xcc6622);
+      g.fillRect(1, 9, 2, 1);
+      g.fillRect(0, 7, 1, 2);
+      g.fillRect(1, 6, 1, 1);
+    });
+    // Orange cat — tail down
+    this.createTile('cat-orange-1', (g) => {
+      g.fillStyle(0x4a8c3f); g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0x55994a); g.fillRect(7, 3, 4, 3);
+      drawCatBody(g, 0xe88833, 0xcc6622, 0xffaa77, 0x33aa33);
+      // Tail hanging down
+      g.fillStyle(0xcc6622);
+      g.fillRect(1, 10, 2, 1);
+      g.fillRect(0, 11, 1, 3);
+      g.fillRect(1, 13, 1, 1);
+    });
+
+    // Black cat — tail up
+    this.createTile('cat-black-0', (g) => {
+      g.fillStyle(0x4a8c3f); g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0x55994a); g.fillRect(10, 1, 3, 2);
+      drawCatBody(g, 0x222222, 0x111111, 0x333333, 0xffcc00);
+      g.fillStyle(0x111111);
+      g.fillRect(1, 9, 2, 1);
+      g.fillRect(0, 7, 1, 2);
+      g.fillRect(1, 6, 1, 1);
+    });
+    // Black cat — tail down
+    this.createTile('cat-black-1', (g) => {
+      g.fillStyle(0x4a8c3f); g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0x55994a); g.fillRect(10, 1, 3, 2);
+      drawCatBody(g, 0x222222, 0x111111, 0x333333, 0xffcc00);
+      g.fillStyle(0x111111);
+      g.fillRect(1, 10, 2, 1);
+      g.fillRect(0, 11, 1, 3);
+      g.fillRect(1, 13, 1, 1);
+    });
+
+    // White/gray cat — sleeping curled up
+    this.createTile('cat-white', (g) => {
+      g.fillStyle(0x4a8c3f); g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0x55994a); g.fillRect(2, 5, 3, 2);
+      // Curled body (round ball shape)
+      g.fillStyle(0xdddddd);
+      g.fillRect(4, 8, 8, 5);
+      g.fillRect(5, 7, 6, 1);
+      g.fillRect(5, 13, 6, 1);
+      g.fillStyle(0xeeeeee);
+      g.fillRect(5, 9, 6, 3);
+      // Head resting on paws
+      g.fillStyle(0xdddddd);
+      g.fillRect(10, 7, 4, 3);
+      // Ears
+      g.fillStyle(0xcccccc);
+      g.fillRect(11, 6, 1, 1);
+      g.fillRect(13, 6, 1, 1);
+      g.fillStyle(0xffbbbb);
+      g.fillRect(12, 6, 1, 1);
+      // Closed eyes (sleeping line)
+      g.fillStyle(0x666666);
+      g.fillRect(12, 8, 2, 1);
+      // Gray patches
+      g.fillStyle(0xbbbbbb);
+      g.fillRect(6, 9, 2, 2);
+      g.fillRect(9, 11, 2, 1);
+      // Tail curled around
+      g.fillStyle(0xcccccc);
+      g.fillRect(3, 12, 2, 1);
+      g.fillRect(2, 11, 1, 1);
+      g.fillRect(2, 10, 1, 1);
+    });
+
+    // Flying bird frames — use canvas for transparency
+    this.createTransparentTile('bird-fly-0', (ctx) => {
+      // Body
+      ctx.fillStyle = '#5588bb';
+      ctx.fillRect(5, 7, 6, 3);
+      // Head
+      ctx.fillRect(10, 5, 3, 3);
+      // Eye
+      ctx.fillStyle = '#111111';
+      ctx.fillRect(11, 6, 1, 1);
+      // Beak
+      ctx.fillStyle = '#f5a623';
+      ctx.fillRect(13, 6, 2, 1);
+      // Wings UP
+      ctx.fillStyle = '#4477aa';
+      ctx.fillRect(5, 4, 5, 1);
+      ctx.fillRect(6, 3, 3, 1);
+      ctx.fillRect(7, 2, 2, 1);
+      // Tail
+      ctx.fillStyle = '#336699';
+      ctx.fillRect(3, 7, 3, 1);
+      ctx.fillRect(2, 8, 2, 1);
+    });
+
+    this.createTransparentTile('bird-fly-1', (ctx) => {
+      // Body
+      ctx.fillStyle = '#5588bb';
+      ctx.fillRect(5, 7, 6, 3);
+      // Head
+      ctx.fillRect(10, 5, 3, 3);
+      // Eye
+      ctx.fillStyle = '#111111';
+      ctx.fillRect(11, 6, 1, 1);
+      // Beak
+      ctx.fillStyle = '#f5a623';
+      ctx.fillRect(13, 6, 2, 1);
+      // Wings DOWN
+      ctx.fillStyle = '#4477aa';
+      ctx.fillRect(5, 10, 5, 1);
+      ctx.fillRect(6, 11, 3, 1);
+      ctx.fillRect(7, 12, 2, 1);
+      // Tail
+      ctx.fillStyle = '#3366aa';
+      ctx.fillRect(3, 7, 3, 1);
+      ctx.fillRect(2, 8, 2, 1);
+    });
+
+    // Arcade machine cabinet (tall, colorful, with screen)
+    this.createTile('arcade-machine', (g) => {
+      // Floor
+      g.fillStyle(0x8a8078);
+      g.fillRect(0, 0, TILE, TILE);
+      g.fillStyle(0x7d756d);
+      g.fillRect(0, 0, TILE, 1);
+      // Cabinet body (dark blue)
+      g.fillStyle(0x1a1a4e);
+      g.fillRect(3, 1, 10, 15);
+      // Cabinet side highlights
+      g.fillStyle(0x2a2a6e);
+      g.fillRect(4, 1, 8, 14);
+      // Screen bezel (black)
+      g.fillStyle(0x111111);
+      g.fillRect(5, 2, 6, 5);
+      // Screen (green/cyan glow)
+      g.fillStyle(0x00cc88);
+      g.fillRect(6, 3, 4, 3);
+      // Screen pixel art (little invader)
+      g.fillStyle(0x00ff66);
+      g.fillRect(7, 3, 1, 1);
+      g.fillRect(8, 4, 1, 1);
+      g.fillRect(7, 5, 2, 1);
+      // Control panel (dark gray)
+      g.fillStyle(0x333333);
+      g.fillRect(5, 8, 6, 3);
+      // Joystick
+      g.fillStyle(0xdd2222);
+      g.fillRect(6, 9, 1, 2);
+      // Buttons
+      g.fillStyle(0xff4444);
+      g.fillRect(9, 9, 1, 1);
+      g.fillStyle(0x44aaff);
+      g.fillRect(10, 9, 1, 1);
+      // Coin slot
+      g.fillStyle(0xf5a623);
+      g.fillRect(7, 12, 2, 1);
+      // Base
+      g.fillStyle(0x111133);
+      g.fillRect(4, 14, 8, 2);
+    });
+
     // Gangster NPC (short hair, short beard, dark suit)
     this.createTile('gangster-npc', (g) => {
       // Shadow
@@ -1897,5 +2143,14 @@ export default class BootScene extends Phaser.Scene {
     drawFn(g);
     g.generateTexture(key, TILE, TILE);
     g.destroy();
+  }
+
+  createTransparentTile(key, drawFn) {
+    const canvas = document.createElement('canvas');
+    canvas.width = TILE;
+    canvas.height = TILE;
+    const ctx = canvas.getContext('2d');
+    drawFn(ctx);
+    this.textures.addCanvas(key, canvas);
   }
 }
